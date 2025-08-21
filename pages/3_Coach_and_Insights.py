@@ -51,7 +51,8 @@ TASKS:
 Format as short bullets."""
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
-    os.environ["OPENAI_API_KEY"] = "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"
+    
+    OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
     api_key = os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
         return "(Set OPENAI_API_KEY to enable live AI.)\n• Overview: ...\n• Why the scores: ...\n• Health check: ...\n• Suggestions: ..."

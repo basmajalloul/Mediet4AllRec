@@ -7,8 +7,9 @@ def _model_name():
 def call_llm(messages, temperature=0.6, max_tokens=900):
     """Minimal OpenAI Chat Completions wrapper. Expects OPENAI_API_KEY in env.
        Returns string content. Falls back to a stub if no key is present."""
-    os.environ["OPENAI_API_KEY"] = "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"    
-    api_key = os.getenv("OPENAI_API_KEY")
+    
+    OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+    api_key = OPENAI_API_KEY
     if not api_key:
         # --- fallback stub for dev ---
         return json.dumps({
