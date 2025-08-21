@@ -1,0 +1,5 @@
+﻿# Replace any OpenAI-style key (sk- followed by 20+ base62 chars)
+regex:sk-[A-Za-z0-9]{20,}==>sk-***REDACTED***
+
+# (Optional) If you committed a line like OPENAI_API_KEY="sk-...":
+regex:(OPENAI_API_KEY\s*=\s*["\'])sk-[A-Za-z0-9-]+(["\'])==>$1REDACTED$2
