@@ -1,5 +1,6 @@
 # utils/ai.py
 import json, os
+import streamlit as st
 
 def _model_name():
     return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
