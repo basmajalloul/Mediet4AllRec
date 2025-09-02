@@ -14,6 +14,25 @@ per_meal = st.session_state.get("__per_meal__", {})
 daily    = st.session_state.get("__daily__", 0)
 snap = live_snapshot(profile, per_meal, daily)
 
+from utils.ui import energy_banner
+from meddiet_rules import split_meal_targets
+from utils.state import ORDERED_MEALS
+
+# --- show global energy/score banner on this page ---
+per_meal = st.session_state.get("__per_meal__")
+daily    = st.session_state.get("daily_cals")
+if not per_meal:
+    pattern = st.session_state.get("meal_pattern", "3_meals_1_snack")
+    daily = daily or 2400
+    per_meal = split_meal_targets(daily, pattern)
+    st.session_state["__per_meal__"] = per_meal
+if not daily:
+    daily = int(sum(per_meal.get(m, 0) for m in ORDERED_MEALS))
+
+df = st.session_state["df"]
+
+energy_banner(daily, per_meal, df=df)  # recipes_df has recipe_id, meal_type, calories_kcal
+
 st.markdown("## Daily Adherence")
 adh = snap["adh"]
 c1,c2,c3 = st.columns(3)
@@ -53,7 +72,9 @@ Format as short bullets."""
 def call_llm(system_prompt: str, user_prompt: str) -> str:
     
     OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
-    api_key = os.environ.get("OPENAI_API_KEY", "")
+
+    api_key = OPENAI_API_KEY
+
     if not api_key:
         return "(Set OPENAI_API_KEY to enable live AI.)\n• Overview: ...\n• Why the scores: ...\n• Health check: ...\n• Suggestions: ..."
     client = OpenAI(api_key=api_key)

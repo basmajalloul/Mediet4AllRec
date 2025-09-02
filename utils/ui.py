@@ -14,17 +14,27 @@ def inject_css_and_title():
       .metriccard{background:linear-gradient(135deg,#fefeff 0%,#f1f6ff 100%);border:1px solid #e9eef4;border-radius:16px;padding:18px 22px;box-shadow:0 1px 5px rgba(0,0,0,.05);margin:8px 0}
       .metricrow{display:flex;gap:12px;align-items:center}
       h1#mediterranean-diet-recommendation-system {
-          font-weight: 900;
-          text-transform: uppercase;
+          font-weight: 700;
           font-size: 30px;
           color: #f9ad1a;
           padding-bottom: 0px !important;
           margin-top: 5px;
       }
+      h1#mediterranean-diet-recommendation-system span { 
+          color: #153222;       
+        }
+      p#title-caption {
+        font-weight: bold;
+        color: #386bb3;
+      }
+      .pill.good{background:#ecfdf5;color:#065f46}
+      .pill.warn{background:#fff7ed;color:#92400e}
+      .pill.bad{background:#fef2f2;color:#991b1b}
+
       .metricicon{font-size:1.3rem;background:#e7efff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
       .metricmain{font-size:1.2rem;font-weight:800;color:#1a3d7c}
-      .metricsub{font-size:.95rem;color:#444;margin-top:3px}
-      .pill{background:#f4f6fb;color:#333;padding:3px 10px;border-radius:999px;font-size:.78rem;margin-right:6px}
+      .metricsub{font-size:.95rem;color:#444;margin-top:3px;font-weight: bold;}
+      .pill{background:#f4f6fb;color:#333;padding:3px 10px;border-radius:999px;font-size:.7rem;margin-right:6px;text-transform: uppercase;}
       .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#e8f3ea;color:#1c6b2a;font-weight:700;font-size:.80rem}
       .divider{height:1px;background:#eef2f7;margin:12px 0}
       .coach-output{padding:16px 20px;border-radius:12px;background:#fafbfc;border-left:4px solid #5ca0f2;font-size:.97rem;line-height:1.55;color:#2a323f;margin-top:12px}
@@ -96,19 +106,70 @@ def topbar_logo_and_title():
     c1,c2 = st.columns([1,8])
     with c1: st.image("download.png", width=150)
     with c2:
-        st.markdown('<h1 id="meddiet">Mediterranean Diet Recommendation System</h1>', unsafe_allow_html=True)
-        st.caption("Profile-based recommendations • Intake logging • Health-aware prioritization")
+        st.markdown('<h1 id="meddiet"><span>Mediterranean</span> Diet Recommendation System</h1>', unsafe_allow_html=True)
+        st.markdown("<p id='title-caption'>Profile-based recommendations • Intake logging • Health-aware prioritization</p>", unsafe_allow_html=True)
 
-# ---------------- energy banner ----------------
-def energy_banner(total_kcal: int, per: Dict[str,int]):
+# ---------------- energy banner (now supports live consumption) ----------------
+def energy_banner(total_kcal: int, per: Dict[str,int], df=None):
+    """
+    total_kcal: daily kcal target (e.g., 2482)
+    per:        per-meal targets, keys: 'Breakfast','Lunch','Dinner','Snack'
+    df:         OPTIONAL dataframe of the recipe catalog (must include: recipe_id, meal_type, calories_kcal)
+                If provided and st.session_state['logged'] is non-empty, the banner shows
+                'consumed/target' and per-meal splits with a status pill (below/within/above).
+    """
+    # --- helper: compute today's consumed kcals per meal from the logged list ---
+    def _by_meal_consumed(_df):
+        from .state import ORDERED_MEALS
+        logged = st.session_state.get("logged", [])
+        by = {m: 0 for m in ORDERED_MEALS}
+        if _df is None or not logged:
+            return by, 0
+        used = _df[_df["recipe_id"].isin(logged)][["meal_type","calories_kcal"]]
+        for m in ORDERED_MEALS:
+            by[m] = int(used.loc[used["meal_type"]==m, "calories_kcal"].sum())
+        return by, int(sum(by.values()))
+
+    def _status(total:int, target:int):
+        if target <= 0: return "good","on track"
+        r = total/target
+        if r < 0.90:  return "warn","below"
+        if r <= 1.10: return "good","within"
+        return "bad","above"
+
+    by_meal, consumed = _by_meal_consumed(df)
+    live = (df is not None) and (consumed > 0)
+
     c1,c2 = st.columns([2,1])
     with c1:
-        st.markdown(f"""
-        <div class="metriccard">
-         <div class="metricrow"><div class="metricicon">🔥</div>
-          <div><div class="metricmain">Daily energy target: {int(total_kcal)} kcal</div>
-          <div class="metricsub">Breakfast {per['Breakfast']} • Lunch {per['Lunch']} • Dinner {per['Dinner']} • Snack {per['Snack']} kcal</div>
-         </div></div></div>""", unsafe_allow_html=True)
+        if live:
+            pill_cls, pill_txt = _status(consumed, int(total_kcal))
+            sub = " • ".join([
+                f"Breakfast {by_meal.get('Breakfast',0)}/{int(per.get('Breakfast',0) or 0)}",
+                f"Lunch {by_meal.get('Lunch',0)}/{int(per.get('Lunch',0) or 0)}",
+                f"Dinner {by_meal.get('Dinner',0)}/{int(per.get('Dinner',0) or 0)}",
+                f"Snack {by_meal.get('Snack',0)}/{int(per.get('Snack',0) or 0)} kcal",
+            ])
+            st.markdown(f"""
+            <div class="metriccard">
+              <div class="metricrow"><div class="metricicon">🔥</div>
+                <div>
+                  <div class="metricmain">Daily energy: {consumed} / {int(total_kcal)} kcal
+                    <span class="pill {pill_cls}" style="margin-left:8px">{pill_txt}</span>
+                  </div>
+                  <div class="metricsub">{sub}</div>
+                </div>
+              </div>
+            </div>""", unsafe_allow_html=True)
+        else:
+            # fallback: original static view (unchanged)
+            st.markdown(f"""
+            <div class="metriccard">
+             <div class="metricrow"><div class="metricicon">🔥</div>
+              <div><div class="metricmain">Daily energy target: {int(total_kcal)} kcal</div>
+              <div class="metricsub">Breakfast {per['Breakfast']} • Lunch {per['Lunch']} • Dinner {per['Dinner']} • Snack {per['Snack']} kcal</div>
+             </div></div></div>""", unsafe_allow_html=True)
+
     with c2:
         st.markdown(f"""
         <div class="metriccard">

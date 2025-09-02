@@ -18,6 +18,25 @@ per_meal    = st.session_state.get("__per_meal__", {"Breakfast":0,"Lunch":0,"Din
 idx = ml.build_recipe_index(df)
 RESCORER = ml.train_rescorer(df, per_meal, diet_prefs, health)
 
+from utils.ui import energy_banner
+from meddiet_rules import split_meal_targets
+from utils.state import ORDERED_MEALS
+
+# --- show global energy/score banner on this page ---
+per_meal = st.session_state.get("__per_meal__")
+daily    = st.session_state.get("daily_cals")
+if not per_meal:
+    pattern = st.session_state.get("meal_pattern", "3_meals_1_snack")
+    daily = daily or 2400
+    per_meal = split_meal_targets(daily, pattern)
+    st.session_state["__per_meal__"] = per_meal
+if not daily:
+    daily = int(sum(per_meal.get(m, 0) for m in ORDERED_MEALS))
+
+df = st.session_state["df"]
+
+energy_banner(daily, per_meal, df=df)  # recipes_df has recipe_id, meal_type, calories_kcal
+
 st.markdown("## Daily Recommendations")
 tabs = st.tabs(["Breakfast", "Lunch", "Dinner", "Snack"])
 meal_order = ["Breakfast", "Lunch", "Dinner", "Snack"]

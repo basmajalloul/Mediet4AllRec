@@ -10,7 +10,9 @@ def call_llm(messages, temperature=0.6, max_tokens=900):
        Returns string content. Falls back to a stub if no key is present."""
     
     OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+
     api_key = OPENAI_API_KEY
+
     if not api_key:
         # --- fallback stub for dev ---
         return json.dumps({

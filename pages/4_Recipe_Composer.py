@@ -8,6 +8,11 @@ from utils.compose import (
     compute_fit_for_recipe, critique_message, refine_prompt
 )
 from meddiet_rules import split_meal_targets
+from utils.ui import inject_css_and_title, topbar_logo_and_title
+
+ensure_session_keys()
+inject_css_and_title()
+topbar_logo_and_title()
 
 st.set_page_config(page_title="Recipe Composer", layout="wide")
 ensure_session_keys()
@@ -26,11 +31,31 @@ st.markdown("""
 .metricrow .pct{color:#6a7485;font-size:.95rem;min-width:48px;text-align:right}
 .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
 .actions .stButton>button{border-radius:10px;padding:12px 18px;font-weight:700}
+h2#mediet-ai-recipe-composer {margin-bottom: 0px !important;}
 </style>
 """, unsafe_allow_html=True)
 
+from utils.ui import energy_banner
+from meddiet_rules import split_meal_targets
+from utils.state import ORDERED_MEALS
 
-st.title("🧑‍🍳 Recipe Composer (MedDiet + AI)")
+# --- show global energy/score banner on this page ---
+per_meal = st.session_state.get("__per_meal__")
+daily    = st.session_state.get("daily_cals")
+if not per_meal:
+    pattern = st.session_state.get("meal_pattern", "3_meals_1_snack")
+    daily = daily or 2400
+    per_meal = split_meal_targets(daily, pattern)
+    st.session_state["__per_meal__"] = per_meal
+if not daily:
+    daily = int(sum(per_meal.get(m, 0) for m in ORDERED_MEALS))
+
+df = st.session_state["df"]
+
+energy_banner(daily, per_meal, df=df)  # recipes_df has recipe_id, meal_type, calories_kcal
+
+#st.title("🧑Recipe Composer (MedDiet + AI)")
+st.markdown("## MedietAI Recipe Composer")
 st.caption("Compose coherent recipes that respect your profile, pantry, and MedDiet rules. I’ll auto‑critique and fix obvious issues.")
 
 # --- sidebar / inputs ---
@@ -51,10 +76,12 @@ health = st.session_state.get("__health__", {
 })
 
 pantry = st.tags_input("Pantry ingredients (free text)", suggestions=[
-    "olive oil","garlic","onion","tomato","chickpeas","lentils","spinach","lemon","yogurt","oats","tuna","whole‑grain pasta"
+    "olive oil","garlic","onion","tomato","spinach","lemon",
+    "yogurt","oats","tuna","whole-grain pasta","brown rice","egg","zucchini","peppers"
 ]) if hasattr(st, "tags_input") else st.text_input("Pantry (comma‑separated)").split(",")
 
 strict_pantry = st.checkbox("Use pantry only (no extra staples)", value=False)
+st.caption("Tip: Add words like *wrap*, *stew*, *tray bake*, *skewers*, *pasta* to your pantry line to pull the format.")
 
 c1, c2 = st.columns(2)
 with c1:
@@ -78,8 +105,15 @@ if btn or regen:
         st.stop()
 
     # ---- 2) Critique with rules ----
+    # after first draft
     score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)
-    critique = critique_message(score, dbg)
+    critique = critique_message(score, dbg, recipe)   # pass recipe
+
+    # after refine attempt
+    recipe = _json_from_text(raw)
+    score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)
+    critique = critique_message(score, dbg, recipe)   # ensure critique updated
+
 
     # ---- 3) If issues, ask the LLM to refine once ----
     if critique and "Looks good" not in critique:
