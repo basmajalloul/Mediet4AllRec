@@ -3,7 +3,9 @@ import urllib.parse
 import streamlit as st
 import streamlit.components.v1 as components
 from typing import Dict, List
-from .state import ORDERED_MEALS
+from utils.state import ORDERED_MEALS
+from utils.db import append_logged_meal
+from datetime import date
 
 # ---------------- CSS once ----------------
 def inject_css_and_title():
@@ -97,6 +99,38 @@ def inject_css_and_title():
             margin-bottom: 20px !important;
             font-weight: bold !important;
         }
+        .stTextInput button {
+            float: none !important;
+            background: none !important;
+            color: black !important;
+            margin-bottom: 0px !important;
+        }
+                    
+        .stFormSubmitButton  button {
+            float: none !important;
+            margin: 0px !important;
+        }
+                    
+        .st-emotion-cache-1echtaq.e6f82ta1 p {
+            font-size: 12px !important;
+            color: #666;
+        }
+
+        .stSidebar button {
+            padding: 5px !important;
+            height: 18px !important;
+            line-height: 13px !important;
+            min-height: 25px;
+            border-radius: 6px;
+            font-weight: bold;
+            background: #f9ad1a;
+            border: 0px;
+        }
+
+        .stSidebar button p {
+            font-weight: bold;
+            color: white !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -121,11 +155,13 @@ def energy_banner(total_kcal: int, per: Dict[str,int], df=None):
     # --- helper: compute today's consumed kcals per meal from the logged list ---
     def _by_meal_consumed(_df):
         from .state import ORDERED_MEALS
-        logged = st.session_state.get("logged", [])
+        logged = [str(x) for x in st.session_state.get("logged", [])]
         by = {m: 0 for m in ORDERED_MEALS}
         if _df is None or not logged:
             return by, 0
-        used = _df[_df["recipe_id"].isin(logged)][["meal_type","calories_kcal"]]
+        ids = _df["recipe_id"].astype(str)
+        used = _df[ids.isin(logged)][["meal_type","calories_kcal"]]
+
         for m in ORDERED_MEALS:
             by[m] = int(used.loc[used["meal_type"]==m, "calories_kcal"].sum())
         return by, int(sum(by.values()))
@@ -346,12 +382,34 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
 
         # --- Log button ---
         if st.button("Log this meal", key=f"{log_key_prefix}_log_{r['recipe_id']}"):
-            st.session_state.setdefault("logged", [])
-            st.session_state["logged"].append(r["recipe_id"])
-            st.session_state["score_today"] = int(st.session_state.get("score_today", 0)) + 1
-            st.toast(f"Logged ✅  (score {st.session_state['score_today']})")
+            rid = str(r["recipe_id"])
+
+            # optimistic local add (kept separate from DB snapshot)
+            st.session_state.setdefault("__logged_local__", set())
+            st.session_state["__logged_local__"].add(rid)
+
+            # persist to DB
+            uid = st.session_state.get("__user_id__")
+            if uid:
+                append_logged_meal(uid, {
+                    "logged_date": str(date.today()),
+                    "recipe_id": rid,
+                    "name": r["name"],
+                    "meal_type": r.get("meal_type", "Lunch"),
+                    "calories_kcal": float(r.get("calories_kcal", 0)),
+                    "protein_g":     float(r.get("protein_g", 0)),
+                    "carbs_g":       float(r.get("carbs_g", 0)),
+                    "fat_g":         float(r.get("fat_g", 0)),
+                    "fiber_g":       float(r.get("fiber_g", 0)),
+                    "sodium_mg":     float(r.get("sodium_mg", 0)),
+                })
+
+            # tell pages to refetch DB on next render
+            st.session_state["__log_dirty__"] = True
+
+            st.toast("Logged ✅")
             st.rerun()
-        
+                
         st.markdown(
             f"<a href='{_similar_google(str(r['name']), str(r['cuisine']))}' target='_blank' class='link'>Find similar recipe ↗︎</a>",
             unsafe_allow_html=True
@@ -423,26 +481,29 @@ def meal_block_html(meal: str, rows: List[dict], logged_kcal: int, target_kcal: 
     </script>"""
     return f"<!doctype html><html><head><meta charset='utf-8'>{style}</head><body><div class='wrap'><div class='mealbox'>{header}{rows_html}</div></div>{script}</body></html>"
 
-def logged_section(df, per_meal_target):
+def logged_section(rows: List[dict], per_meal_target: dict):
+    """
+    rows: list of dicts from Supabase meal_logs (with at least id, recipe_id, name, meal_type,
+          calories_kcal, protein_g, carbs_g, fat_g, fiber_g, sodium_mg)
+    per_meal_target: dict with kcal target per meal
+    """
     from .state import ORDERED_MEALS
-    if not st.session_state["logged"]:
+    import streamlit.components.v1 as components
+
+    if not rows:
         st.caption("No meals logged yet. Tap **Log this meal** on a card to add it here.")
         return
-    import math
-    import pandas as pd
-    used = df[df["recipe_id"].isin(st.session_state["logged"])][
-        ["recipe_id","name","meal_type","calories_kcal","protein_g","carbs_g","fat_g","fiber_g","sodium_mg","med_attributes"]
-    ]
+
+    # group rows by meal type
     for meal in ORDERED_MEALS:
-        g = used[used["meal_type"] == meal]
-        if g.empty: continue
-        rows=[]
-        for _,row in g.iterrows():
-            rows.append({
-                "rid":row["recipe_id"],"name":row["name"],"meal_type":row["meal_type"],
-                "calories_kcal":row["calories_kcal"],"protein_g":row["protein_g"],
-                "carbs_g":row["carbs_g"],"fat_g":row["fat_g"],"fiber_g":row["fiber_g"],"sodium_mg":row["sodium_mg"],
-            })
-        html = meal_block_html(meal, rows, int(g["calories_kcal"].sum()), int(per_meal_target.get(meal,0)))
-        est_h = 100 + 92*max(1,len(rows)) + 20
+        g = [r for r in rows if r["meal_type"] == meal]
+        if not g: continue
+        html = meal_block_html(
+            meal,
+            g,
+            int(sum(float(r["calories_kcal"]) for r in g)),
+            int(per_meal_target.get(meal, 0)),
+        )
+        est_h = 100 + 92 * max(1, len(g)) + 20
         components.html(html, height=est_h, scrolling=False)
+

@@ -1,13 +1,37 @@
 # pages/1_Recommendations.py
 import streamlit as st
 from meddiet_rules import recommend, derive_daily_calorie_target, split_meal_targets
-from utils.state import ensure_session_keys, load_recipes
+from utils.state import ensure_session_keys, ORDERED_MEALS
 from utils.ui import inject_css_and_title, topbar_logo_and_title, render_recipe_card
-from utils import ml  # <-- NEW
+from utils import ml
+from datetime import date
+from utils.ui import energy_banner
+from meddiet_rules import derive_daily_calorie_target, split_meal_targets
+from utils.db import load_profile, load_day_log
+
+import pandas as pd
+
+today = date.today()
 
 ensure_session_keys()
 inject_css_and_title()
 topbar_logo_and_title()
+
+from utils.auth_ui import auth_gate
+user = auth_gate()
+user_id = user["id"]
+st.session_state["__user_id__"] = user["id"]
+st.session_state.pop(f"__hydrated_log__:{date.today().isoformat()}", None)
+
+# hydrate from DB (cache per session/day)
+key = f"__hydrated_log__:{today.isoformat()}"
+if not st.session_state.get(key):
+    rows = load_day_log(user_id, today)
+    st.session_state["__today_rows__"] = rows
+    st.session_state[key] = True
+
+rows = st.session_state.get("__today_rows__", [])
+df = pd.DataFrame(rows)
 
 df = st.session_state["df"]
 diet_prefs  = st.session_state.get("__diet_prefs__", {})
@@ -18,24 +42,47 @@ per_meal    = st.session_state.get("__per_meal__", {"Breakfast":0,"Lunch":0,"Din
 idx = ml.build_recipe_index(df)
 RESCORER = ml.train_rescorer(df, per_meal, diet_prefs, health)
 
-from utils.ui import energy_banner
-from meddiet_rules import split_meal_targets
-from utils.state import ORDERED_MEALS
 
-# --- show global energy/score banner on this page ---
-per_meal = st.session_state.get("__per_meal__")
-daily    = st.session_state.get("daily_cals")
-if not per_meal:
-    pattern = st.session_state.get("meal_pattern", "3_meals_1_snack")
-    daily = daily or 2400
-    per_meal = split_meal_targets(daily, pattern)
-    st.session_state["__per_meal__"] = per_meal
-if not daily:
-    daily = int(sum(per_meal.get(m, 0) for m in ORDERED_MEALS))
+# --- normalize & compute targets from DB profile ---
+def _default_profile():
+    return {
+        "age": 30, "height_cm": 170, "sex": "Female", "weight_kg": 70.0,
+        "activity": "Light", "goal": "Maintain", "pattern": "3_meals_1_snack",
+        "ai_language": "English",
+        "conditions": {}, "diet_style": {}, "prefer": ["olive oil"], "avoid": ["anchovies"]
+    }
 
-df = st.session_state["df"]
+def _normalize(p: dict) -> dict:
+    base = _default_profile()
+    p = p or {}
+    base.update({k: p.get(k, base[k]) for k in ["age","height_cm","sex","weight_kg","activity","goal","pattern","ai_language"]})
+    base["conditions"] = {**base["conditions"], **(p.get("conditions") or {})}
+    base["diet_style"] = {**base["diet_style"], **(p.get("diet_style") or {})}
+    base["prefer"] = p.get("prefer", base["prefer"])
+    base["avoid"]  = p.get("avoid",  base["avoid"])
+    return base
 
-energy_banner(daily, per_meal, df=df)  # recipes_df has recipe_id, meal_type, calories_kcal
+active_name = st.session_state.get("active_profile_name", "default")
+saved = load_profile(user_id, active_name)         # {} if none
+prof  = _normalize(saved)
+
+profile = {
+    "age": int(prof["age"]), "sex": prof["sex"],
+    "height_cm": int(prof["height_cm"]), "weight_kg": float(prof["weight_kg"]),
+    "activity": prof["activity"], "goal": prof["goal"],
+}
+pattern = prof.get("pattern", "3_meals_1_snack")
+daily   = derive_daily_calorie_target(profile["age"], profile["weight_kg"], profile["height_cm"],
+                                      profile["sex"], profile["activity"], profile["goal"])
+per_meal = split_meal_targets(daily, pattern)
+st.session_state["daily_cals"]  = daily
+st.session_state["__per_meal__"] = per_meal
+
+# --- hydrate session for UI widgets that rely on it ---
+st.session_state["logged"] = [str(x["recipe_id"]) for x in rows]
+st.session_state["score_today"] = len(st.session_state["logged"])
+
+energy_banner(daily, per_meal, df=st.session_state["df"])
 
 st.markdown("## Daily Recommendations")
 tabs = st.tabs(["Breakfast", "Lunch", "Dinner", "Snack"])

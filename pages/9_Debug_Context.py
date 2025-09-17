@@ -2,6 +2,12 @@
 import json, streamlit as st
 from utils.state import ensure_session_keys
 ensure_session_keys()
+
+from utils.auth_ui import auth_gate
+user = auth_gate()
+user_id = user["id"]
+st.session_state["__user_id__"] = user["id"]
+
 st.title("Debug / Session")
 st.json({
     "score_today": st.session_state.get("score_today"),

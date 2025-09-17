@@ -2,39 +2,12 @@
 import streamlit as st
 from utils.state import ensure_session_keys, get_profile_from_sidebar, compute_targets
 from utils.ui import inject_css_and_title, topbar_logo_and_title, energy_banner
+from utils.auth_ui import auth_gate
+from utils.db import load_profile
 
 ensure_session_keys()
 inject_css_and_title()
 topbar_logo_and_title()
-
-profile, diet_prefs, health, pattern = get_profile_from_sidebar()
-daily, per_meal = compute_targets(profile, pattern)
-
-df = st.session_state["df"]
-
-energy_banner(daily, per_meal, df=df)  # recipes_df has recipe_id, meal_type, calories_kcal
-
-# keep the same values in session for downstream use
-st.session_state["daily_cals"] = float(daily)
-st.session_state["__per_meal__"] = per_meal
-st.session_state["__health__"] = health
-
-
-# st.markdown("---")
-# st.subheader("Welcome")
-# st.write(
-#   "Use the left navigation: **Recommendations** to pick meals, "
-#   "**Logged Today** to manage what you ate, and **Coach & Insights** for AI feedback and adherence."
-# )
-
-# # persist today’s “session snapshot” for other pages
-# st.session_state.update({
-#     "__profile__": profile, "__diet_prefs__": diet_prefs, "__health__": health,
-#     "__pattern__": pattern, "__daily__": daily, "__per_meal__": per_meal
-# })
-
-# --- HOME • Modern UI --------------------------------------------------------
-import math, pandas as pd, streamlit as st
 
 # ---------- CSS (glass cards, gradients, micro-interactions)
 st.markdown("""
@@ -75,6 +48,108 @@ st.markdown("""
 .progressbar>span{display:block;height:100%;border-radius:7px;background:var(--grad);transition:width .4s ease}
 </style>
 """, unsafe_allow_html=True)
+
+# 1) Block until authenticated
+user = auth_gate()   # returns a dict like {"id": "...", "email": "...", ...}
+user_id = user["id"] # you'll use this for per-user queries later
+
+# ---- Active profile name (remember selection across pages) ----
+active_name = st.session_state.get("active_profile_name", "default")
+
+# ---- Safe defaults + normalizer ----
+def _default_profile():
+    return {
+        "age": 30, "height_cm": 170, "sex": "Female", "weight_kg": 70.0,
+        "activity": "Light", "goal": "Maintain", "pattern": "3_meals_1_snack",
+        "ai_language": "English",
+        "conditions": {
+            "hypertension": False, "diabetes": False, "prediabetes": False,
+            "hyperlipidemia": False, "celiac": False, "gerd": False, "autoimmune": False
+        },
+        "diet_style": {
+            "vegan": False, "vegetarian": False, "pescatarian": False,
+            "gluten_free": False, "dairy_free": False
+        },
+        "prefer": ["olive oil"],
+        "avoid": ["anchovies"],
+    }
+
+def _normalize(p: dict) -> dict:
+    base = _default_profile()
+    p = p or {}
+    # merge nested dicts safely
+    base["conditions"].update(p.get("conditions", {}) or {})
+    base["diet_style"].update(p.get("diet_style", {}) or {})
+    # simple fields
+    for k in ["age","height_cm","sex","weight_kg","activity","goal","pattern","ai_language"]:
+        if k in p: base[k] = p[k]
+    base["prefer"] = p.get("prefer", base["prefer"]) or []
+    base["avoid"]  = p.get("avoid",  base["avoid"]) or []
+    return base
+
+# ---- Load profile JSON from Supabase and convert to app structs ----
+raw = load_profile(user_id, active_name)       # {} if none
+prof = _normalize(raw)
+
+# expose coach language to the rest of the app
+st.session_state["ai_language"] = prof.get("ai_language", "English")
+
+profile = {
+    "age": int(prof["age"]),
+    "sex": str(prof["sex"]),
+    "height_cm": int(prof["height_cm"]),
+    "weight_kg": float(prof["weight_kg"]),
+    "activity": str(prof["activity"]),
+    "goal": str(prof["goal"]),
+}
+pattern = str(prof.get("pattern", "3_meals_1_snack"))
+
+diet_prefs = {
+    "vegan": bool(prof["diet_style"]["vegan"]),
+    "vegetarian": (not prof["diet_style"]["vegan"]) and bool(prof["diet_style"]["vegetarian"]),
+    "pescatarian": (not prof["diet_style"]["vegan"] and not prof["diet_style"]["vegetarian"]) and bool(prof["diet_style"]["pescatarian"]),
+    "gluten_free": bool(prof["diet_style"]["gluten_free"] or prof["conditions"]["celiac"]),
+    "dairy_free": bool(prof["diet_style"]["dairy_free"]),
+    "prefer_ingredients": ", ".join(prof.get("prefer", [])),
+    "avoid_ingredients": ", ".join(prof.get("avoid", [])),
+}
+health = {
+    "hypertension": bool(prof["conditions"]["hypertension"]),
+    "diabetes": bool(prof["conditions"]["diabetes"]),
+    "prediabetes": bool(prof["conditions"]["prediabetes"]),
+    "hyperlipidemia": bool(prof["conditions"]["hyperlipidemia"]),
+    "celiac": bool(prof["conditions"]["celiac"]),
+    "gerd": bool(prof["conditions"]["gerd"]),
+    "autoimmune": bool(prof["conditions"]["autoimmune"]),
+}
+
+daily, per_meal = compute_targets(profile, pattern)
+
+df = st.session_state["df"]
+
+energy_banner(daily, per_meal, df=df)  # recipes_df has recipe_id, meal_type, calories_kcal
+
+# keep the same values in session for downstream use
+st.session_state["daily_cals"] = float(daily)
+st.session_state["__per_meal__"] = per_meal
+st.session_state["__health__"] = health
+
+
+# st.markdown("---")
+# st.subheader("Welcome")
+# st.write(
+#   "Use the left navigation: **Recommendations** to pick meals, "
+#   "**Logged Today** to manage what you ate, and **Coach & Insights** for AI feedback and adherence."
+# )
+
+# # persist today’s “session snapshot” for other pages
+# st.session_state.update({
+#     "__profile__": profile, "__diet_prefs__": diet_prefs, "__health__": health,
+#     "__pattern__": pattern, "__daily__": daily, "__per_meal__": per_meal
+# })
+
+# --- HOME • Modern UI --------------------------------------------------------
+import math, pandas as pd, streamlit as st
 
 # ---------- helpers
 def _df_logged():
