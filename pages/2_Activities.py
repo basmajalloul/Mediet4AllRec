@@ -259,6 +259,7 @@ st.markdown("""
   display:flex;align-items:center;justify-content:center}
 .kpi .val{font-weight:900;font-size:1.35rem;color:#162a52}
 .kpi .sub{font-size:.9rem;color:#5f6b7a}
+.row-sep {height: 10px; display: block;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -380,7 +381,7 @@ with qc2:
 
     with st.container(border=True):
         st.markdown('<span class="qbox-start"></span>', unsafe_allow_html=True)
-        st.markdown('<div class="hchip" style="margin-top: -20px; margin-bottom: 15px;"><div class="ico">⚡</div><div>Quick adds</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="hchip" style="margin-top: -20px; margin-bottom: 25px;"><div class="ico">⚡</div><div>Quick adds</div></div>', unsafe_allow_html=True)
 
         for row in _chunks(quick_items, 3):
             cols = st.columns(3, gap="small")
@@ -393,6 +394,7 @@ with qc2:
                         log_quick_activity(kind, mins, inten, kcal)
                     # overlay badge (absolute; doesn't add extra height)
                     st.markdown(f"<span class='qa-badge'>~{kcal} kcal</span>", unsafe_allow_html=True)
+            st.markdown('<span class="row-sep"></span>', unsafe_allow_html=True)
 
 
 
@@ -415,28 +417,120 @@ with qc3:
 st.markdown("---")
 
 # ---------- Log a workout (kept compact & styled) ----------
-st.markdown('<div class="hchip"><div class="ico">📝</div><div>Log a workout</div></div>', unsafe_allow_html=True)
-with st.form("log_workout"):
-    left, right = st.columns([1.2,1])
-    with left:
-        kind = st.selectbox("Type", ["Walk","Run","Cycle","Swim","Strength","Yoga","Other"])
-        intensity = st.select_slider("Intensity", ["Low","Moderate","Vigorous"], value="Moderate")
-        duration_min = st.number_input("Duration (min)", min_value=0, step=5, value=30)
-        notes = st.text_input("Notes (optional)")
-    with right:
-        est_kcal = estimate_kcal(kind, intensity, duration_min, weight_kg)
-        st.write(f"Estimated: **~{int(est_kcal)} kcal** (based on {weight_kg:.1f} kg)")
-        kcal_override = st.number_input("Override kcal (optional)", min_value=0, step=10, value=0)
-        st.markdown('<div class="quickbtn">', unsafe_allow_html=True)
-        submit = st.form_submit_button("Log workout", use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("""
+<style>
+/* Cardify the block that contains our workout marker */
+.block-container div[data-testid="stVerticalBlock"]:has(.wk-card-start){
+  background:#fff;border:1px solid #e9eef4;border-radius:14px;padding:14px 16px;
+  box-shadow:0 2px 10px rgba(18,38,63,0.05); margin-top:6px;
+}
 
-    if submit:
+/* title chip */
+.wk-head{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.05rem;margin-bottom:8px}
+.wk-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:#f7f9fc;border:1px solid #edf1f7;font-size:18px}
+
+/* live kcal tile */
+.miniKPI{background:linear-gradient(135deg,#fff 0%,#f7faff 100%);border:1px solid #e9eef4;border-radius:12px;
+  padding:12px 14px;box-shadow:0 1px 6px rgba(18,38,63,0.06);margin-bottom:10px}
+.miniKPI .t{font-weight:800;color:#1a3d7c;font-size:.95rem}
+.miniKPI .v{font-weight:900;font-size:1.4rem;color:#162a52;margin-top:2px}
+.miniKPI .s{color:#5f6b7a;font-size:.88rem}
+
+/* segmented radios */
+.seg .stRadio > div{gap:8px}
+.seg label{font-weight:700}
+
+/* preset chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 2px}
+.chips .stButton>button{
+  padding:6px 10px;border-radius:999px;border:1px solid #e6ebf2;background:#fff;font-weight:700;font-size:.88rem;
+}
+.chips .stButton>button:hover{background:#f7fafc}
+
+/* style the block that has the log button marker, without extra wrappers */
+.block-container div[data-testid="stVerticalBlock"]:has(.wk-log-btn-marker) .stButton>button{
+  width:100%;border-radius:10px;padding:12px 16px;font-weight:800;
+}
+            
+span.row-sep {
+    display: block;
+    height: 20px;
+    width: 100%;
+}
+
+.st-key-wk_log_btn button {
+    background: linear-gradient(90deg, #f9ad1a, #ee6a04);
+    color: #fff;
+    border: 0px;
+    padding: 10px !important;
+    width: 150px !important;
+    float: right;
+}
+
+.st-key-wk_log_btn button p {
+    font-weight: bold;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# marker to style this block as a card
+st.markdown('<span class="wk-card-start"></span>', unsafe_allow_html=True)
+st.markdown('<div class="wk-head"><div class="wk-ico">📝</div><div>Log a workout</div></div>', unsafe_allow_html=True)
+
+left, right = st.columns([1.25, 1])
+
+# --- LEFT: inputs (stateful, no form, so estimate updates live) ---
+with left:
+    # keep state
+    _kind = st.session_state.get("wk_kind", "Walk")
+    _intensity = st.session_state.get("wk_intensity", "Moderate")
+    _duration = int(st.session_state.get("wk_duration", 30))
+    _notes = st.session_state.get("wk_notes", "")
+
+    with st.container():  # balanced
+        _kind = st.radio("Type", ["Walk","Run","Cycle","Swim","Strength","Yoga","Other"],
+                         index=["Walk","Run","Cycle","Swim","Strength","Yoga","Other"].index(_kind),
+                         horizontal=True, key="wk_kind")
+
+    with st.container():
+        _intensity = st.radio("Intensity", ["Low","Moderate","Vigorous"],
+                              index=["Low","Moderate","Vigorous"].index(_intensity),
+                              horizontal=True, key="wk_intensity")
+
+    _duration = st.slider("Duration (min)", min_value=5, max_value=180, value=_duration, step=5, key="wk_duration")
+
+    _notes = st.text_input("Notes (optional)", value=_notes, key="wk_notes")
+
+# --- RIGHT: live estimate + override + button (all balanced) ---
+with right:
+    est_kcal = estimate_kcal(_kind, _intensity, _duration, weight_kg)
+
+    # Entire tile in a single call (open & close inside)
+    st.markdown(
+        f"""
+        <div class="miniKPI">
+          <div class="t">Estimated</div>
+          <div class="v">~{int(est_kcal)} kcal</div>
+          <div class="s">Based on {weight_kg:.1f} kg • {_intensity.lower()} {_kind.lower()} • {_duration} min</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    kcal_override = st.number_input("Override kcal (optional)", min_value=0, value=0, step=10, key="wk_override")
+
+    # marker so CSS can style the button's parent without wrappers
+    st.markdown('<span class="wk-log-btn-marker"></span>', unsafe_allow_html=True)
+    if st.button("Log workout", use_container_width=True, key="wk_log_btn"):
         kcal = float(kcal_override or est_kcal)
-        insert_activity(user_id, today, kind=kind, intensity=intensity,
-                        duration_min=int(duration_min), calories=kcal, notes=notes or None)
+        insert_activity(
+            user_id=user_id, d=today, kind=_kind, intensity=_intensity,
+            duration_min=int(_duration), calories=kcal, notes=(st.session_state.get("wk_notes") or None)
+        )
         st.toast("Workout logged ✅")
         st.rerun()
+
 
 st.markdown("---")
 

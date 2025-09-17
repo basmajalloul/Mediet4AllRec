@@ -31,7 +31,6 @@ if not st.session_state.get(key):
     st.session_state[key] = True
 
 rows = st.session_state.get("__today_rows__", [])
-df = pd.DataFrame(rows)
 
 df = st.session_state["df"]
 diet_prefs  = st.session_state.get("__diet_prefs__", {})

@@ -6,6 +6,7 @@ from typing import Dict, List
 from utils.state import ORDERED_MEALS
 from utils.db import append_logged_meal
 from datetime import date
+from utils.db import append_logged_meal, sum_activity_kcal_for_day
 
 # ---------------- CSS once ----------------
 def inject_css_and_title():
@@ -144,43 +145,67 @@ def topbar_logo_and_title():
         st.markdown("<p id='title-caption'>Profile-based recommendations • Intake logging • Health-aware prioritization</p>", unsafe_allow_html=True)
 
 # ---------------- energy banner (now supports live consumption) ----------------
-def energy_banner(total_kcal: int, per: Dict[str,int], df=None):
+def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
     """
-    total_kcal: daily kcal target (e.g., 2482)
-    per:        per-meal targets, keys: 'Breakfast','Lunch','Dinner','Snack'
-    df:         OPTIONAL dataframe of the recipe catalog (must include: recipe_id, meal_type, calories_kcal)
-                If provided and st.session_state['logged'] is non-empty, the banner shows
-                'consumed/target' and per-meal splits with a status pill (below/within/above).
+    Global banner with three cards:
+      [ Net / Target + per-meal splits ]  [ Activity today ]  [ Score Today ]
+    Signature unchanged so all pages keep working.
     """
-    # --- helper: compute today's consumed kcals per meal from the logged list ---
-    def _by_meal_consumed(_df):
-        from .state import ORDERED_MEALS
-        logged = [str(x) for x in st.session_state.get("logged", [])]
+    ORDERED_MEALS = ["Breakfast", "Lunch", "Dinner", "Snack"]
+
+    # --- food kcal from today's logged meals (if df + st.session_state["logged"] is used)
+    def _consumed_by_meal(_df):
         by = {m: 0 for m in ORDERED_MEALS}
+        logged = [str(x) for x in st.session_state.get("logged", [])]
         if _df is None or not logged:
             return by, 0
         ids = _df["recipe_id"].astype(str)
-        used = _df[ids.isin(logged)][["meal_type","calories_kcal"]]
-
+        use = _df[ids.isin(logged)][["meal_type", "calories_kcal"]]
         for m in ORDERED_MEALS:
-            by[m] = int(used.loc[used["meal_type"]==m, "calories_kcal"].sum())
+            by[m] = int(use.loc[use["meal_type"] == m, "calories_kcal"].sum())
         return by, int(sum(by.values()))
 
-    def _status(total:int, target:int):
+    def _status(net:int, target:int):
         if target <= 0: return "good","on track"
-        r = total/target
+        r = net / target
         if r < 0.90:  return "warn","below"
         if r <= 1.10: return "good","within"
         return "bad","above"
 
-    by_meal, consumed = _by_meal_consumed(df)
+    by_meal, consumed = _consumed_by_meal(df)
+
+    # --- activity kcals (DB-backed)
+    user_id = st.session_state.get("__user_id__") or st.session_state.get("user_id")
+    try:
+        activity_kcal = int(sum_activity_kcal_for_day(user_id, date.today())) if user_id else 0
+    except Exception:
+        activity_kcal = 0
+
+    def _fmt_kcal(v: int) -> str:
+        v = int(v)
+        return f"-{abs(v)}" if v < 0 else f"{v}"
+
+    def _status(net: int, target: int):
+        if net < 0:
+            return "warn", "deficit"           # activity > food
+        if target <= 0:
+            return "good", "on track"
+        r = net / target
+        if r < 0.90:  return "warn", "below"
+        if r <= 1.10: return "good", "within"
+        return "bad", "above"
+
+    net = int(consumed) - int(activity_kcal)
     live = (df is not None) and (consumed > 0)
 
-    c1,c2 = st.columns([2,1])
+    # ---------- layout: 3 columns (main, activity, score)
+    c1, c2, c3 = st.columns([2, 1, 1])
+
+    # MAIN: Net/Target (or Target-only when no logs yet)
     with c1:
         if live:
-            pill_cls, pill_txt = _status(consumed, int(total_kcal))
-            sub = " • ".join([
+            pill_cls, pill_txt = _status(net, int(total_kcal))
+            per_meal_line = " • ".join([
                 f"Breakfast {by_meal.get('Breakfast',0)}/{int(per.get('Breakfast',0) or 0)}",
                 f"Lunch {by_meal.get('Lunch',0)}/{int(per.get('Lunch',0) or 0)}",
                 f"Dinner {by_meal.get('Dinner',0)}/{int(per.get('Dinner',0) or 0)}",
@@ -190,29 +215,54 @@ def energy_banner(total_kcal: int, per: Dict[str,int], df=None):
             <div class="metriccard">
               <div class="metricrow"><div class="metricicon">🔥</div>
                 <div>
-                  <div class="metricmain">Daily energy: {consumed} / {int(total_kcal)} kcal
-                    <span class="pill {pill_cls}" style="margin-left:8px">{pill_txt}</span>
-                  </div>
-                  <div class="metricsub">{sub}</div>
+                    <div class="metricmain">Net today: {_fmt_kcal(net)} / {int(total_kcal)} kcal
+                        <span class="pill {pill_cls}" style="margin-left:8px">{pill_txt}</span>
+                    </div>
+                  <div class="metricsub">{per_meal_line}</div>
                 </div>
               </div>
-            </div>""", unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            # fallback: original static view (unchanged)
             st.markdown(f"""
             <div class="metriccard">
-             <div class="metricrow"><div class="metricicon">🔥</div>
-              <div><div class="metricmain">Daily energy target: {int(total_kcal)} kcal</div>
-              <div class="metricsub">Breakfast {per['Breakfast']} • Lunch {per['Lunch']} • Dinner {per['Dinner']} • Snack {per['Snack']} kcal</div>
-             </div></div></div>""", unsafe_allow_html=True)
+              <div class="metricrow"><div class="metricicon">🔥</div>
+                <div>
+                  <div class="metricmain">Daily energy target: {int(total_kcal)} kcal</div>
+                  <div class="metricsub">
+                    Breakfast {per.get('Breakfast',0)} • Lunch {per.get('Lunch',0)}
+                    • Dinner {per.get('Dinner',0)} • Snack {per.get('Snack',0)} kcal
+                  </div>
+                </div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
 
+    # NEW MIDDLE CARD: Activity today
     with c2:
         st.markdown(f"""
         <div class="metriccard">
-         <div class="metricrow"><div class="metricicon">✅</div>
-          <div><div class="metricmain">Score Today: {int(st.session_state.get('score_today',0))}</div>
-          <div class="metricsub">+1 per meal logged</div>
-        </div></div></div>""", unsafe_allow_html=True)
+          <div class="metricrow"><div class="metricicon">🏃</div>
+            <div>
+              <div class="metricmain">Activity today</div>
+              <div class="metricsub">-{int(activity_kcal)} kcal</div>
+            </div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # RIGHT CARD: Score Today (unchanged)
+    with c3:
+        st.markdown(f"""
+        <div class="metriccard">
+          <div class="metricrow"><div class="metricicon">✅</div>
+            <div>
+              <div class="metricmain">Score Today: {int(st.session_state.get('score_today',0))}</div>
+              <div class="metricsub">+1 per meal logged</div>
+            </div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ---------------- recommend card ----------------
 def similar_recipe_search_url(name: str, cuisine: str) -> str:

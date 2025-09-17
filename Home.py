@@ -3,7 +3,9 @@ import streamlit as st
 from utils.state import ensure_session_keys, compute_targets
 from utils.ui import inject_css_and_title, topbar_logo_and_title, energy_banner
 from utils.auth_ui import auth_gate
-from utils.db import load_profile
+from utils.db import load_profile, load_day_log
+from datetime import date
+import pandas as pd
 
 ensure_session_keys()
 inject_css_and_title()
@@ -52,6 +54,32 @@ st.markdown("""
 # 1) Block until authenticated
 user = auth_gate()   # returns a dict like {"id": "...", "email": "...", ...}
 user_id = user["id"] # you'll use this for per-user queries later
+
+def _hydrate_banner_from_db(user_id: str):
+    """Build the tiny df energy_banner expects + refresh st.session_state['logged'] for today."""
+    try:
+        rows = load_day_log(user_id, date.today()) or []
+    except Exception:
+        rows = []
+
+    # set the ids the banner uses to filter df
+    st.session_state["logged"] = [
+        str(r.get("recipe_id")) for r in rows if r.get("recipe_id") is not None
+    ]
+
+    # minimal df schema the banner expects: recipe_id, meal_type, calories_kcal
+    if not rows:
+        return None
+
+    df_banner = pd.DataFrame([
+        {
+            "recipe_id": str(r.get("recipe_id")),
+            "meal_type": r.get("meal_type") or "Other",
+            "calories_kcal": int(r.get("calories_kcal") or 0),
+        }
+        for r in rows
+    ])
+    return df_banner
 
 # ---- Active profile name (remember selection across pages) ----
 active_name = st.session_state.get("active_profile_name", "default")
@@ -127,7 +155,8 @@ daily, per_meal = compute_targets(profile, pattern)
 
 df = st.session_state["df"]
 
-energy_banner(daily, per_meal, df=df)  # recipes_df has recipe_id, meal_type, calories_kcal
+df_for_banner = _hydrate_banner_from_db(user_id)
+energy_banner(daily, per_meal, df=df_for_banner)
 
 # keep the same values in session for downstream use
 st.session_state["daily_cals"] = float(daily)
