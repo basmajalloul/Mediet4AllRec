@@ -6,10 +6,13 @@ from utils.auth_ui import auth_gate
 from utils.db import load_profile, load_day_log
 from datetime import date
 import pandas as pd
+from meddiet_rules import derive_daily_calorie_target, split_meal_targets
 
 ensure_session_keys()
 inject_css_and_title()
 topbar_logo_and_title()
+
+today = date.today()
 
 # ---------- CSS (glass cards, gradients, micro-interactions)
 st.markdown("""
@@ -51,73 +54,70 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 1) Block until authenticated
-user = auth_gate()   # returns a dict like {"id": "...", "email": "...", ...}
-user_id = user["id"] # you'll use this for per-user queries later
-
-def _hydrate_banner_from_db(user_id: str):
-    """Build the tiny df energy_banner expects + refresh st.session_state['logged'] for today."""
-    try:
-        rows = load_day_log(user_id, date.today()) or []
-    except Exception:
-        rows = []
-
-    # set the ids the banner uses to filter df
-    st.session_state["logged"] = [
-        str(r.get("recipe_id")) for r in rows if r.get("recipe_id") is not None
-    ]
-
-    # minimal df schema the banner expects: recipe_id, meal_type, calories_kcal
-    if not rows:
-        return None
-
-    df_banner = pd.DataFrame([
-        {
-            "recipe_id": str(r.get("recipe_id")),
-            "meal_type": r.get("meal_type") or "Other",
-            "calories_kcal": int(r.get("calories_kcal") or 0),
-        }
-        for r in rows
-    ])
-    return df_banner
-
 # ---- Active profile name (remember selection across pages) ----
 active_name = st.session_state.get("active_profile_name", "default")
 
-# ---- Safe defaults + normalizer ----
+from utils.auth_ui import auth_gate
+user = auth_gate()
+user_id = user["id"]
+st.session_state["__user_id__"] = user["id"]
+st.session_state.pop(f"__hydrated_log__:{date.today().isoformat()}", None)
+
+# hydrate from DB (cache per session/day)
+key = f"__hydrated_log__:{today.isoformat()}"
+if not st.session_state.get(key):
+    rows = load_day_log(user_id, today)
+    st.session_state["__today_rows__"] = rows
+    st.session_state[key] = True
+
+rows = st.session_state.get("__today_rows__", [])
+
+df = st.session_state["df"]
+diet_prefs  = st.session_state.get("__diet_prefs__", {})
+health      = st.session_state.get("__health__", {})
+per_meal    = st.session_state.get("__per_meal__", {"Breakfast":0,"Lunch":0,"Dinner":0,"Snack":0})
+
+
+# --- normalize & compute targets from DB profile ---
 def _default_profile():
     return {
         "age": 30, "height_cm": 170, "sex": "Female", "weight_kg": 70.0,
         "activity": "Light", "goal": "Maintain", "pattern": "3_meals_1_snack",
         "ai_language": "English",
-        "conditions": {
-            "hypertension": False, "diabetes": False, "prediabetes": False,
-            "hyperlipidemia": False, "celiac": False, "gerd": False, "autoimmune": False
-        },
-        "diet_style": {
-            "vegan": False, "vegetarian": False, "pescatarian": False,
-            "gluten_free": False, "dairy_free": False
-        },
-        "prefer": ["olive oil"],
-        "avoid": ["anchovies"],
+        "conditions": {}, "diet_style": {}, "prefer": ["olive oil"], "avoid": ["anchovies"]
     }
 
 def _normalize(p: dict) -> dict:
     base = _default_profile()
     p = p or {}
-    # merge nested dicts safely
-    base["conditions"].update(p.get("conditions", {}) or {})
-    base["diet_style"].update(p.get("diet_style", {}) or {})
-    # simple fields
-    for k in ["age","height_cm","sex","weight_kg","activity","goal","pattern","ai_language"]:
-        if k in p: base[k] = p[k]
-    base["prefer"] = p.get("prefer", base["prefer"]) or []
-    base["avoid"]  = p.get("avoid",  base["avoid"]) or []
+    base.update({k: p.get(k, base[k]) for k in ["age","height_cm","sex","weight_kg","activity","goal","pattern","ai_language"]})
+    base["conditions"] = {**base["conditions"], **(p.get("conditions") or {})}
+    base["diet_style"] = {**base["diet_style"], **(p.get("diet_style") or {})}
+    base["prefer"] = p.get("prefer", base["prefer"])
+    base["avoid"]  = p.get("avoid",  base["avoid"])
     return base
 
-# ---- Load profile JSON from Supabase and convert to app structs ----
-raw = load_profile(user_id, active_name)       # {} if none
-prof = _normalize(raw)
+active_name = st.session_state.get("active_profile_name", "default")
+saved = load_profile(user_id, active_name)         # {} if none
+prof  = _normalize(saved)
+
+profile = {
+    "age": int(prof["age"]), "sex": prof["sex"],
+    "height_cm": int(prof["height_cm"]), "weight_kg": float(prof["weight_kg"]),
+    "activity": prof["activity"], "goal": prof["goal"],
+}
+pattern = prof.get("pattern", "3_meals_1_snack")
+daily   = derive_daily_calorie_target(profile["age"], profile["weight_kg"], profile["height_cm"],
+                                      profile["sex"], profile["activity"], profile["goal"])
+per_meal = split_meal_targets(daily, pattern)
+st.session_state["daily_cals"]  = daily
+st.session_state["__per_meal__"] = per_meal
+
+# --- hydrate session for UI widgets that rely on it ---
+st.session_state["logged"] = [str(x["recipe_id"]) for x in rows]
+st.session_state["score_today"] = len(st.session_state["logged"])
+
+energy_banner(daily, per_meal, df=st.session_state["df"])
 
 # expose coach language to the rest of the app
 st.session_state["ai_language"] = prof.get("ai_language", "English")
@@ -151,12 +151,7 @@ health = {
     "autoimmune": bool(prof["conditions"]["autoimmune"]),
 }
 
-daily, per_meal = compute_targets(profile, pattern)
-
 df = st.session_state["df"]
-
-df_for_banner = _hydrate_banner_from_db(user_id)
-energy_banner(daily, per_meal, df=df_for_banner)
 
 # keep the same values in session for downstream use
 st.session_state["daily_cals"] = float(daily)

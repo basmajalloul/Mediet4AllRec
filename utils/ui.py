@@ -21,7 +21,7 @@ def inject_css_and_title():
           font-size: 30px;
           color: #f9ad1a;
           padding-bottom: 0px !important;
-          margin-top: 5px;
+          margin-top: 0px;
       }
       h1#mediterranean-diet-recommendation-system span { 
           color: #153222;       
@@ -131,6 +131,9 @@ def inject_css_and_title():
         .stSidebar button p {
             font-weight: bold;
             color: white !important;
+        }
+        .stSidebar p {
+            font-size: 14px;
         }
     </style>
     """, unsafe_allow_html=True)

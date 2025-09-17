@@ -6,7 +6,7 @@ from utils.auth_ui import auth_gate
 from utils.ui import inject_css_and_title, topbar_logo_and_title, energy_banner
 from utils.db import (
     load_profile, load_day_log,
-    activities_for_day, insert_activity, sum_activity_kcal_for_day
+    activities_for_day, insert_activity, sum_activity_kcal_for_day, get_client
 )
 from meddiet_rules import derive_daily_calorie_target, split_meal_targets
 
@@ -137,6 +137,13 @@ def render_activity_strip():
             unsafe_allow_html=True,
         )
 
+def delete_activities_for_day(user_id: str, d: date) -> tuple[bool, str | None]:
+    try:
+        get_client().table("activities").delete().eq("user_id", user_id).eq("d", d.isoformat()).execute()
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
 # ---- Compact Energy + Activity banner (single card) ----
 from utils.db import load_day_log  # already imported above
 
@@ -152,7 +159,8 @@ def energy_banner_compact(daily_kcal: int, per_meal: dict, user_id: str, d: date
         food_kcal = 0.0
 
     activity_kcal = sum_activity_kcal_for_day(user_id, d)
-    net_kcal = max(food_kcal - activity_kcal, 0.0)
+    net_kcal = food_kcal - activity_kcal
+
 
     # subtle CSS tweaks for the compact layout
     st.markdown("""
@@ -341,7 +349,7 @@ with qc2:
         color: #666;
     }
                 
-    #root > div:nth-child(1) > div.withScreencast > div > div > div > section > div.stMainBlockContainer.block-container > div > div:nth-child(9) > div > div:nth-child(2) > div > div > div {
+    #root > div:nth-child(1) > div.withScreencast > div > div > div > section > div.stMainBlockContainer.block-container.st-emotion-cache-zy6yx3.e4man114 > div > div:nth-child(10) > div > div:nth-child(2) > div > div.st-emotion-cache-18kf3ut.e52wr8w3 > div {        
         border: 0px;
         box-shadow: none;
         padding: 0px;
@@ -379,22 +387,21 @@ with qc2:
         ("🤸", "Stretch",  10, 2.3, "Light"),
     ]
 
-    with st.container(border=True):
-        st.markdown('<span class="qbox-start"></span>', unsafe_allow_html=True)
-        st.markdown('<div class="hchip" style="margin-top: -20px; margin-bottom: 25px;"><div class="ico">⚡</div><div>Quick adds</div></div>', unsafe_allow_html=True)
+    st.markdown('<span class="qbox-start"></span>', unsafe_allow_html=True)
+    st.markdown('<div class="hchip" style="margin-top: -20px; margin-bottom: 25px;"><div class="ico">⚡</div><div>Quick adds</div></div>', unsafe_allow_html=True)
 
-        for row in _chunks(quick_items, 3):
-            cols = st.columns(3, gap="small")
-            for col, (emoji, kind, mins, met, inten) in zip(cols, row):
-                with col:
-                    kcal = est_kcal(met, mins, _w)
-                    # one compact card: button + overlay badge inside the same column
-                    if st.button(f"{emoji}  {kind} · {mins}m", key=f"qa_{kind}_{mins}", use_container_width=True,
-                                help=f"Est. ~{kcal} kcal"):
-                        log_quick_activity(kind, mins, inten, kcal)
-                    # overlay badge (absolute; doesn't add extra height)
-                    st.markdown(f"<span class='qa-badge'>~{kcal} kcal</span>", unsafe_allow_html=True)
-            st.markdown('<span class="row-sep"></span>', unsafe_allow_html=True)
+    for row in _chunks(quick_items, 3):
+        cols = st.columns(3, gap="small")
+        for col, (emoji, kind, mins, met, inten) in zip(cols, row):
+            with col:
+                kcal = est_kcal(met, mins, _w)
+                # one compact card: button + overlay badge inside the same column
+                if st.button(f"{emoji}  {kind} · {mins}m", key=f"qa_{kind}_{mins}", use_container_width=True,
+                            help=f"Est. ~{kcal} kcal"):
+                    log_quick_activity(kind, mins, inten, kcal)
+                # overlay badge (absolute; doesn't add extra height)
+                st.markdown(f"<span class='qa-badge'>~{kcal} kcal</span>", unsafe_allow_html=True)
+        st.markdown('<span class="row-sep"></span>', unsafe_allow_html=True)
 
 
 
@@ -566,3 +573,30 @@ else:
                 """,
                 unsafe_allow_html=True
             )
+
+# --- Danger zone: reset today's activities ---
+st.markdown("---")
+with st.container(border=True):
+    st.markdown('<div class="hchip"><div class="ico">🧨</div><div>Danger zone</div></div>', unsafe_allow_html=True)
+
+    # show the first button or the confirm UI based on a flag
+    if not st.session_state.get("__confirm_reset_acts__", False):
+        if st.button("🗑️ Reset today’s activities", key="start_reset_acts"):
+            st.session_state["__confirm_reset_acts__"] = True
+            st.rerun()
+    else:
+        st.warning("This will permanently delete **all** activity logs for **today**. This cannot be undone.")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Confirm delete", key="confirm_delete_acts"):
+                ok, err = delete_activities_for_day(user_id, today)
+                if ok:
+                    st.toast("Cleared today’s activities ✅")
+                    st.session_state["__confirm_reset_acts__"] = False
+                    st.rerun()
+                else:
+                    st.error(f"Couldn’t delete: {err}")
+        with c2:
+            if st.button("Cancel", key="cancel_delete_acts"):
+                st.session_state["__confirm_reset_acts__"] = False
+                st.rerun()
