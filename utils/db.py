@@ -157,3 +157,50 @@ def remove_log_by_recipe(user_id: str, day: date, recipe_id: str) -> int:
     try: load_day_log.clear()  # type: ignore
     except: pass
     return r.count or 0
+
+# --- replace your current activities helpers with this set ---
+
+from typing import List, Dict, Optional
+from datetime import date
+
+# list day activities
+def activities_for_day(user_id: str, d: date) -> List[Dict]:
+    r = (
+        get_client()
+        .table("activities")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("d", d.isoformat())
+        .order("created_at")
+        .execute()
+    )
+    return r.data or []
+
+# sum kcal for day
+def sum_activity_kcal_for_day(user_id: str, d: date) -> float:
+    rows = activities_for_day(user_id, d)
+    return float(sum((r.get("calories") or 0) for r in rows))
+
+# insert one activity
+def insert_activity(
+    user_id: str,
+    d: date,
+    kind: str,
+    intensity: str = "Moderate",
+    duration_min: Optional[int] = None,
+    steps: Optional[int] = None,
+    calories: Optional[float] = None,
+    notes: Optional[str] = None,
+):
+    payload = {
+        "user_id": user_id,          # user_id is UUID string; Postgres will accept cast
+        "d": d.isoformat(),
+        "kind": kind,
+        "intensity": intensity,
+        "duration_min": duration_min,
+        "steps": steps,
+        "calories": calories,
+        "notes": notes,
+    }
+    payload = {k: v for k, v in payload.items() if v is not None}
+    return get_client().table("activities").insert(payload).execute()

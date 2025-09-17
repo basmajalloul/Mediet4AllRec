@@ -1,6 +1,6 @@
 # Home.py
 import streamlit as st
-from utils.state import ensure_session_keys, get_profile_from_sidebar, compute_targets
+from utils.state import ensure_session_keys, compute_targets
 from utils.ui import inject_css_and_title, topbar_logo_and_title, energy_banner
 from utils.auth_ui import auth_gate
 from utils.db import load_profile
