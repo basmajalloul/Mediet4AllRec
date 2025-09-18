@@ -10,8 +10,6 @@ from utils.db import (
 )
 from meddiet_rules import derive_daily_calorie_target, split_meal_targets
 
-st.set_page_config(page_title="Activities", page_icon="🏃", layout="wide")
-
 # ---------- Global CSS + Title (same vibe as other pages) ----------
 inject_css_and_title()
 topbar_logo_and_title()
@@ -69,6 +67,7 @@ st.markdown("""
   background:#eef7ff;border:1px solid #e1ecfb;font-size:16px}
 .acttitle{font-weight:800;color:#263244}
 .actmeta{color:#5f6b7a;font-size:.9rem}
+#root > div:nth-child(1) > div.withScreencast > div > div > div > section > div.stMainBlockContainer.block-container > div {padding: 0px !important; box-shadow: none !important; border: 0px !important;}
 </style>
 """, unsafe_allow_html=True)
 

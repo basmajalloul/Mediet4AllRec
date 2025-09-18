@@ -10,6 +10,11 @@ from utils.db import append_logged_meal, sum_activity_kcal_for_day
 
 # ---------------- CSS once ----------------
 def inject_css_and_title():
+    st.set_page_config(
+        page_title="Mediet4All",
+        page_icon="download.png",   # relative path to your file
+        layout="wide"
+    )
     st.set_page_config(page_title="MedDiet Recommender", layout="wide")
     st.markdown("""
     <style>                
