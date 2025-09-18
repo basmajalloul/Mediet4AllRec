@@ -18,7 +18,12 @@ topbar_logo_and_title()
 
 from utils.auth_ui import auth_gate
 user = auth_gate()
-user_id = user["id"]
+if not user:
+    st.stop()  # or show a login prompt
+
+st.session_state["user_id"] = user["id"]       # <- normalize the key
+user_id = st.session_state["user_id"]
+
 st.session_state["__user_id__"] = user["id"]
 st.session_state.pop(f"__hydrated_log__:{date.today().isoformat()}", None)
 
