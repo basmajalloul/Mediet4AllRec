@@ -37,6 +37,8 @@ diet_prefs  = st.session_state.get("__diet_prefs__", {})
 health      = st.session_state.get("__health__", {})
 per_meal    = st.session_state.get("__per_meal__", {"Breakfast":0,"Lunch":0,"Dinner":0,"Snack":0})
 
+#print(df.head())
+
 # cache heavy bits once
 idx = ml.build_recipe_index(df)
 RESCORER = ml.train_rescorer(df, per_meal, diet_prefs, health)
@@ -91,6 +93,9 @@ for tab, meal in zip(tabs, meal_order):
     with tab:
         target_kcal = per_meal[meal]
         # 1) Big candidate pool from rule-engine
+        # st.write("Unique meal types:", df["meal_type"].unique().tolist())
+        # st.write("Calories sample:", df[["name","meal_type","calories_kcal"]].head(10))
+
         pool = recommend(
             df, meal, target_kcal, diet_prefs, health,
             k=24,

@@ -102,7 +102,13 @@ def compute_meal_fit_score(row, kcal_target: int, diet_prefs: Dict, health: Dict
     return total, dbg
 
 def recommend(df: pd.DataFrame, meal_type: str, kcal_target: int, diet_prefs: Dict, health: Dict, k: int = 5, exclude_recipe_ids: List[str] = None) -> pd.DataFrame:
-    subset = df[df["meal_type"].str.lower() == meal_type.lower()].copy()
+    mt = (
+        df.get("meal_type")
+        .astype(str)              # coerce non-strings/NaN
+        .str.strip()
+        .str.lower()
+    )
+    subset = df[mt == str(meal_type).strip().lower()].copy()
     if exclude_recipe_ids:
         subset = subset[~subset["recipe_id"].isin(exclude_recipe_ids)]
     scores=[]; cals=[]; diets=[]; avoids=[]; prefers=[]; healths=[]

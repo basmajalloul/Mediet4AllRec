@@ -10,30 +10,67 @@ from sklearn.ensemble import RandomForestRegressor
 
 from meddiet_rules import compute_meal_fit_score
 
+
 # ---------- Embedding index (TF-IDF + SVD + nutrients) ----------
 @st.cache_resource(show_spinner=False)
 def build_recipe_index(df: pd.DataFrame):
+    # 0) Early exit on empty DF
+    if df is None or len(df) == 0:
+        return {"emb": np.zeros((0, 8), dtype=np.float32), "rid2pos": {}}
+
+    # 1) Build text exactly once (coerce to str)
     text = (
         df.get("ingredients", "").fillna("").astype(str) + " " +
         df.get("med_attributes", "").fillna("").astype(str) + " " +
         df.get("cuisine", "").fillna("").astype(str) + " " +
         df.get("diet_tags", "").fillna("").astype(str)
-    ).str.lower()
+    ).str.lower().str.replace(r"\s+", " ", regex=True)
 
-    tfidf = TfidfVectorizer(min_df=2, max_df=0.9, ngram_range=(1, 2))
-    X_text = tfidf.fit_transform(text)
-
-    svd = TruncatedSVD(n_components=min(64, max(2, X_text.shape[1]-1)))
-    X_lat = svd.fit_transform(X_text).astype(np.float32)
-
+    # 2) Numeric features (always available)
     num_cols = ["calories_kcal","protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]
-    scaler = StandardScaler()
-    X_num = scaler.fit_transform(df[num_cols].fillna(0.0)).astype(np.float32)
+    X_num = df[num_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0).to_numpy(dtype=np.float32)
+    # normalize rows
+    Xn = X_num / (np.linalg.norm(X_num, axis=1, keepdims=True) + 1e-8)
 
-    X = np.hstack([X_lat, X_num])
-    X /= (np.linalg.norm(X, axis=1, keepdims=True) + 1e-8)
+    # 3) Try TF-IDF text → SVD; relax min_df if needed
+    X_text_lat = None
+    nonempty = text.str.strip().str.len() > 0
+    docs = text[nonempty].tolist()
+    try:
+        if len(docs) > 0:
+            # pick min_df so we always get a vocabulary
+            # (at least 1% of docs, but ≥1 and ≤5)
+            md = max(1, min(5, int(round(0.01 * len(docs)))))
+            tfidf = TfidfVectorizer(
+                stop_words="english",
+                min_df=md,
+                max_df=0.9,
+                ngram_range=(1, 2),
+                token_pattern=r"(?u)\b\w\w+\b"   # words with ≥2 letters
+            )
+            X = tfidf.fit_transform(docs)
+            # guard against tiny vocab
+            n_comp = int(min(64, max(2, X.shape[1]-1)))
+            if n_comp >= 2:
+                svd = TruncatedSVD(n_components=n_comp, random_state=3)
+                X_text_lat = svd.fit_transform(X).astype(np.float32)
+    except Exception:
+        X_text_lat = None
 
-    rid2pos = {rid: i for i, rid in enumerate(df["recipe_id"].tolist())}
+    # 4) Combine (fallback to numeric-only if needed)
+    if X_text_lat is None:
+        X = Xn
+    else:
+        # pad rows that were empty docs with zeros so shapes align
+        out = np.zeros((len(df), X_text_lat.shape[1]), dtype=np.float32)
+        out[nonempty.values, :] = X_text_lat
+        Xt = out / (np.linalg.norm(out, axis=1, keepdims=True) + 1e-8)
+        X = np.hstack([Xt, Xn])
+
+    # final row-norm
+    X = X / (np.linalg.norm(X, axis=1, keepdims=True) + 1e-8)
+
+    rid2pos = {rid: i for i, rid in enumerate(df["recipe_id"].astype(str).tolist())}
     return {"emb": X, "rid2pos": rid2pos}
 
 # ---------- Train a tiny learned re-scorer over rule features ----------

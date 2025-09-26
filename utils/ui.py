@@ -402,6 +402,24 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
     pills_html = "".join([f"<span class='pill'>{p}</span>" for p in pills[:10]])
 
     with st.container(border=True):
+        # --- Recipe image on top ---
+        if r.get("image_url"):
+            st.markdown(
+                f"""
+                <div style="
+                    width: 100%;
+                    height: 240px;
+                    background-image: url('{r['image_url']}');
+                    background-size: cover;
+                    background-position: center;
+                    border-radius: 12px;
+                    margin-bottom: 8px;
+                "></div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        # --- Title & subtitle ---
         st.markdown(f"<div class='title'><strong>{r['name']}</strong></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sub'><b>{int(r['calories_kcal'])} kcal</b> · {r['cuisine']}</div>", unsafe_allow_html=True)
 

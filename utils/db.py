@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from datetime import date
-
+import pandas as pd
 import streamlit as st
 from supabase import create_client, Client
 
@@ -204,3 +204,45 @@ def insert_activity(
     }
     payload = {k: v for k, v in payload.items() if v is not None}
     return get_client().table("activities").insert(payload).execute()
+
+
+RECIPE_COLUMNS = [
+    "recipe_id","name","meal_type","cuisine","servings",
+    "prep_time_min","cook_time_min",
+    "calories_kcal","protein_g","carbs_g","fat_g","fiber_g","sodium_mg",
+    "diet_tags","med_attributes","ingredients","instructions",
+    "is_vegetarian","is_vegan","is_pescatarian","is_gluten_free","is_dairy_free",
+    "image_url",
+]
+
+@st.cache_data(ttl=300)
+def load_recipes_db() -> pd.DataFrame:
+    r = (
+        get_client()
+        .table("recipes")
+        .select(",".join(RECIPE_COLUMNS))
+        .order("name")
+        .execute()
+    )
+    rows = r.data or []
+    df = pd.DataFrame(rows, columns=RECIPE_COLUMNS)
+
+    # dtypes & sanitization
+    num_cols = ["servings","prep_time_min","cook_time_min",
+                "calories_kcal","protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]
+    for c in num_cols:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0).astype(int)
+
+    bool_cols = ["is_vegetarian","is_vegan","is_pescatarian","is_gluten_free","is_dairy_free"]
+    for c in bool_cols:
+        if c in df.columns:
+            df[c] = df[c].astype(bool)
+
+    # ensure strings (avoid NaNs blowing up UI)
+    str_cols = [c for c in RECIPE_COLUMNS if c not in num_cols + bool_cols]
+    for c in str_cols:
+        if c in df.columns:
+            df[c] = df[c].astype(str).fillna("")
+
+    return df

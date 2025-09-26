@@ -14,10 +14,10 @@ MODEL_NAME = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
 # ------------------ data ------------------
 @st.cache_data(show_spinner=False)
-def load_recipes(path: str = "meddiet_recipes.csv") -> pd.DataFrame:
-    df = pd.read_csv(path)
-    for col in ["is_vegetarian","is_vegan","is_pescatarian","is_gluten_free","is_dairy_free"]:
-        if col in df.columns: df[col] = df[col].astype(bool)
+def load_recipes(path: str = "") -> pd.DataFrame:
+    # Ignore path: recipes now come from Supabase
+    from utils.db import load_recipes_db
+    df = load_recipes_db()
     return df
 
 # utils/state.py
