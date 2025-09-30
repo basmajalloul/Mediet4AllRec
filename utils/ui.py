@@ -139,7 +139,7 @@ def inject_css_and_title():
         }
         .stSidebar p {
             font-size: 14px;
-        }
+        }                    
     </style>
     """, unsafe_allow_html=True)
 
@@ -580,4 +580,82 @@ def logged_section(rows: List[dict], per_meal_target: dict):
         )
         est_h = 100 + 92 * max(1, len(g)) + 20
         components.html(html, height=est_h, scrolling=False)
+
+def render_recipe_card_compact(r, *, kcal_target, diet_prefs, health, log_key_prefix="rec"):
+    overall_pct = _pct01(r["fit_score"])
+    
+    # tags
+    pills = []
+    if r.get("diet_tags"):
+        pills += [p.strip() for p in str(r["diet_tags"]).split(",") if p.strip()]
+    if r.get("med_attributes"):
+        for p in [p.strip() for p in str(r["med_attributes"]).split(",") if p.strip()]:
+            if p in ("olive_oil","legumes","whole_grains","fish","nuts_seeds","fruits","vegetables","yogurt_cheese"):
+                pills.append(p.replace("_"," "))
+    pills_html = "".join([f"<span class='pill'>{p}</span>" for p in pills[:6]])
+
+    with st.container(border=True):
+        # image
+        if r.get("image_url"):
+            st.markdown(
+                f"""
+                <div style="
+                    width: 100%;
+                    height: 140px;
+                    background-image: url('{r['image_url']}');
+                    background-size: cover;
+                    background-position: center;
+                    border-radius: 10px;
+                    margin-bottom: 6px;
+                "></div>
+                """,
+                unsafe_allow_html=True
+            )
+        # title + kcal
+        st.markdown(f"<div class='title'><strong>{r['name']}</strong></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sub'><b>{int(r['calories_kcal'])} kcal</b> · {r['cuisine']}</div>", unsafe_allow_html=True)
+
+        # fit badge
+        st.markdown(f"<span class='badge'>Overall fit: {overall_pct}%</span>", unsafe_allow_html=True)
+
+        # tags
+        # if pills_html:
+        #     st.markdown(f"<div class='pills' style='min-height: 75px; display: flex; flex-direction: row; flex-wrap: wrap; align-content: center; justify-content: center; align-items: center;'>{pills_html}</div>", unsafe_allow_html=True)
+
+        # ingredients (short)
+        # if r.get("ingredients"):
+        #     st.markdown(f"<div class='ing'><b>Ingredients:</b> {r['ingredients']}</div>", unsafe_allow_html=True)
+
+        # --- Log button + link row ---
+        col1, col2 = st.columns([1,1])
+        with col1:
+            if st.button("Log this meal", key=f"{log_key_prefix}_log_{r['recipe_id']}"):
+                rid = str(r["recipe_id"])
+                st.session_state.setdefault("__logged_local__", set())
+                st.session_state["__logged_local__"].add(rid)
+
+                uid = st.session_state.get("__user_id__")
+                if uid:
+                    append_logged_meal(uid, {
+                        "logged_date": str(date.today()),
+                        "recipe_id": rid,
+                        "name": r["name"],
+                        "meal_type": r.get("meal_type", "Lunch"),
+                        "calories_kcal": float(r.get("calories_kcal", 0)),
+                        "protein_g":     float(r.get("protein_g", 0)),
+                        "carbs_g":       float(r.get("carbs_g", 0)),
+                        "fat_g":         float(r.get("fat_g", 0)),
+                        "fiber_g":       float(r.get("fiber_g", 0)),
+                        "sodium_mg":     float(r.get("sodium_mg", 0)),
+                    })
+
+                st.session_state["__log_dirty__"] = True
+                st.toast("Logged ✅")
+                st.rerun()
+
+        with col2:
+            st.markdown(
+                f"<a href='{_similar_google(str(r['name']), str(r['cuisine']))}' target='_blank' class='link'>Find similar ↗︎</a>",
+                unsafe_allow_html=True
+            )
 
