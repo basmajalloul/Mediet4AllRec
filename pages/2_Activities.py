@@ -34,6 +34,14 @@ per_meal = split_meal_targets(daily, pattern)
 st.session_state["daily_cals"]    = daily
 st.session_state["__per_meal__"]  = per_meal
 
+foods = load_day_log(user_id, today) or []
+
+def minutes_to_burn(kcal_target, kind, intensity, weight):
+    met = _MET.get((kind,intensity), 5.0)
+    # kcal = MET × weight × hours
+    hours = kcal_target / (met * max(weight,40))
+    return int(round(hours * 60))
+
 # ---------- Page-specific micro-CSS to style cards + quick boxes ----------
 st.markdown("""
 <style>
@@ -274,6 +282,176 @@ st.markdown("""
 
 # ---- call it once (replace the two banners) ----
 energy_banner_compact(daily, per_meal, user_id, today)
+
+st.markdown("---")
+
+# ---------- Today’s logs (card grid) ----------
+st.markdown('<div class="hchip"><div class="ico">📒</div><div>Today’s logs</div></div>', unsafe_allow_html=True)
+rows = activities_for_day(user_id, today)
+
+if not rows:
+    st.info("No activities yet today.")
+else:
+    st.markdown("""
+    <style>
+      .log-card{
+        background:#fff;
+        border:1px solid #e9eef4;
+        border-radius:12px;
+        padding:12px;
+        margin:6px;
+        box-shadow:0 2px 8px rgba(18,38,63,0.05);
+        font-size:0.88rem;
+      }
+      .log-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+      .log-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+                background:#eef7ff;border:1px solid #e1ecfb;font-size:16px}
+      .log-title{font-weight:700;color:#263244}
+      .log-meta{color:#5f6b7a;font-size:.82rem;margin-bottom:2px}
+    </style>
+    """, unsafe_allow_html=True)
+
+    icons = {
+        "Walk":"🚶","Run":"🏃","Cycle":"🚴","Swim":"🏊","Strength":"🏋️","Yoga":"🧘","Steps":"👣","Other":"⚡"
+    }
+
+    cols_per_row = 5
+    for i, r in enumerate(rows):
+        kind = r.get("kind","Other")
+        icon = icons.get(kind, "⚡")
+        intensity = r.get("intensity","")
+        details = []
+        if r.get("duration_min"): details.append(f"{int(r['duration_min'])} min")
+        if r.get("steps"):        details.append(f"{int(r['steps'])} steps")
+        kcal = int(float(r.get("calories") or 0))
+
+        if i % cols_per_row == 0:
+            cols = st.columns(cols_per_row, gap="small")
+        with cols[i % cols_per_row]:
+            st.markdown(
+                f"""
+                <div class="log-card">
+                  <div class="log-head">
+                    <div class="log-icon">{icon}</div>
+                    <div class="log-title">{kind}{f" ({intensity})" if intensity else ""}</div>
+                  </div>
+                  <div class="log-meta">{", ".join(details) if details else "—"}</div>
+                  <div class="log-meta"><b>{kcal} kcal</b></div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+# ---------- Recommended activities (grid compact cards) ----------
+st.markdown("## Recommended activities")
+
+foods = load_day_log(user_id, today) or []
+if not foods:
+    st.info("Log some meals first to see suggested activities to burn them off.")
+else:
+    st.markdown("""
+    <style>
+      .rec-card-btn > button {
+        background:#fff !important;
+        border:1px solid #e9eef4 !important;
+        border-radius:12px !important;
+        padding:14px !important;
+        margin:6px !important;
+        box-shadow:0 2px 6px rgba(18,38,63,0.05) !important;
+        font-size:0.9rem !important;
+        text-align:left !important;
+        height:auto !important;
+        height: 100px;
+      }
+      .rec-title{font-weight:700;color:#263244;margin-bottom:4px}
+      .rec-meta{color:#5f6b7a;font-size:.82rem;margin-bottom:2px}
+       h2#recommended-activities {
+            padding-bottom: 0px;
+            margin-bottom: 0px !important;
+            margin-top: 20px;
+        }
+
+        h2#activities {
+            margin-bottom: 0px !important;
+            margin-top: 25px;
+        }
+        .stTooltipHoverTarget {
+            /*height: 120px; */
+            padding: 0px;
+            background: #fff;
+            border-radius: 12px;
+            margin: 6px;
+            box-shadow: 0 2px 8px rgba(18, 38, 63, 0.05);
+            font-size: 0.88rem;
+        }
+
+        .stTooltipHoverTarget button {
+            border: 1px solid #e9eef4 !important;
+        } 
+
+        .stTooltipHoverTarget button * {
+            color: #000 !important;
+        } 
+
+        .stTooltipHoverTarget em {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        background: #eef7ff;
+        border: 1px solid #e1ecfb;
+        font-size: 16px;
+        display: inline;
+        margin-right: 5px;
+        font-style: normal;
+    }        
+    </style>
+    """, unsafe_allow_html=True)
+
+    icons2 = {
+        "Walk":"🚶","Run":"🏃","Cycle":"🚴","Swim":"🏊","Strength":"🏋️","Yoga":"🧘","Steps":"👣","Other":"⚡"
+    }
+
+    # choose how many cards per row
+    cols_per_row = 5
+    for i, f in enumerate(foods):
+        kind2 = f.get("kind","Other")
+        icon2 = icons2.get(kind, "⚡")
+
+        kcal = int(float(f.get("calories_kcal") or 0))
+        name = f.get("name","Meal")
+        lname = name.lower()
+        if any(w in lname for w in ["couscous","pasta","rice","bread"]):
+            kind,inten = "Run","Moderate"
+        elif any(w in lname for w in ["fish","chicken"]):
+            kind,inten = "Walk","Moderate"
+        elif any(w in lname for w in ["cake","tart","dessert","sweet"]):
+            kind,inten = "Cycle","Moderate"
+        else:
+            kind,inten = "Walk","Moderate"
+
+        mins = minutes_to_burn(kcal, kind, inten, weight_kg)
+
+        if i % cols_per_row == 0:
+            cols = st.columns(cols_per_row, gap="small")
+        with cols[i % cols_per_row]:
+            if st.button(
+                f"*{icon2}* **{name}**\n\n≈ {kcal} kcal\n\n{kind} ({inten}) · {mins} min",
+                key=f"log_{f['id']}",
+                use_container_width=True,
+                help="Click to log this activity",
+                type="secondary",
+            ):
+                insert_activity(
+                    user_id=user_id, d=today,
+                    kind=kind, intensity=inten,
+                    duration_min=mins, calories=kcal,
+                    notes=f"Burn-off for {name}"
+                )
+                st.toast(f"{kind} {mins}m logged ✅")
+                st.rerun()
 
 st.markdown("## Activities")
 
@@ -537,41 +715,6 @@ with right:
         st.toast("Workout logged ✅")
         st.rerun()
 
-
-st.markdown("---")
-
-# ---------- Today’s logs (sleek cards) ----------
-st.markdown('<div class="hchip"><div class="ico">📒</div><div>Today’s logs</div></div>', unsafe_allow_html=True)
-rows = activities_for_day(user_id, today)
-
-if not rows:
-    st.info("No activities yet today.")
-else:
-    icons = {
-        "Walk":"🚶","Run":"🏃","Cycle":"🚴","Swim":"🏊","Strength":"🏋️","Yoga":"🧘","Steps":"👣","Other":"⚡"
-    }
-    for r in rows:
-        kind = r.get("kind","Other")
-        icon = icons.get(kind, "⚡")
-        intensity = r.get("intensity","")
-        details = []
-        if r.get("duration_min"): details.append(f"{int(r['duration_min'])} min")
-        if r.get("steps"):        details.append(f"{int(r['steps'])} steps")
-        kcal = int(float(r.get("calories") or 0))
-        with st.container():
-            st.markdown(
-                f"""
-                <div class="actcard">
-                  <div class="acthead">
-                    <div class="acticon">{icon}</div>
-                    <div class="acttitle">{kind}{f" ({intensity})" if intensity else ""}</div>
-                  </div>
-                  <div class="actmeta">{", ".join(details) if details else "—"}</div>
-                  <div class="actmeta"><b>{kcal} kcal</b></div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
 
 # --- Danger zone: reset today's activities ---
 st.markdown("---")
