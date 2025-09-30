@@ -33,15 +33,11 @@ if not st.session_state.get(key):
 rows = st.session_state.get("__today_rows__", [])
 
 df = st.session_state["df"]
-diet_prefs  = st.session_state.get("__diet_prefs__", {})
 health      = st.session_state.get("__health__", {})
 per_meal    = st.session_state.get("__per_meal__", {"Breakfast":0,"Lunch":0,"Dinner":0,"Snack":0})
 
 #print(df.head())
 
-# cache heavy bits once
-idx = ml.build_recipe_index(df)
-RESCORER = ml.train_rescorer(df, per_meal, diet_prefs, health)
 
 
 # --- normalize & compute targets from DB profile ---
@@ -66,6 +62,23 @@ def _normalize(p: dict) -> dict:
 active_name = st.session_state.get("active_profile_name", "default")
 saved = load_profile(user_id, active_name)         # {} if none
 prof  = _normalize(saved)
+
+# Build diet_prefs for the rules engine (expects strings + booleans)
+diet_prefs = {
+    "vegan":        bool(prof.get("diet_style", {}).get("vegan")),
+    "vegetarian":   bool(prof.get("diet_style", {}).get("vegetarian")),
+    "pescatarian":  bool(prof.get("diet_style", {}).get("pescatarian")),
+    "gluten_free":  bool(prof.get("diet_style", {}).get("gluten_free")),
+    "dairy_free":   bool(prof.get("diet_style", {}).get("dairy_free")),
+    # comma-separated strings, matched against recipe ingredient text
+    "prefer_ingredients": ", ".join(prof.get("prefer", []) or []),
+    "avoid_ingredients":  ", ".join(prof.get("avoid",  []) or []),
+}
+st.session_state["__diet_prefs__"] = diet_prefs
+
+# cache heavy bits once
+idx = ml.build_recipe_index(df)
+RESCORER = ml.train_rescorer(df, per_meal, diet_prefs, health)
 
 profile = {
     "age": int(prof["age"]), "sex": prof["sex"],
@@ -96,11 +109,8 @@ for tab, meal in zip(tabs, meal_order):
         # st.write("Unique meal types:", df["meal_type"].unique().tolist())
         # st.write("Calories sample:", df[["name","meal_type","calories_kcal"]].head(10))
 
-        pool = recommend(
-            df, meal, target_kcal, diet_prefs, health,
-            k=24,
-            exclude_recipe_ids=st.session_state.get("logged", [])
-        )
+        pool = recommend(df, meal, target_kcal, diet_prefs, health, k=24, exclude_recipe_ids=st.session_state.get("logged", []))
+
         if pool.empty:
             st.warning("No matching recipes found for current filters. Try relaxing constraints.")
             continue

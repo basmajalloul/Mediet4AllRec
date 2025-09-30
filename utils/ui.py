@@ -352,11 +352,11 @@ def render_why_this(row, kcal_target:int):
 
     bullets = []
     # Energy nudge
-    if abs(delta) >= 60:
-        if delta > 0:
-            bullets.append(("🧭","Below target by ~{} kcal → consider adding a small whole‑grain/legume side or a drizzle of olive oil.".format(delta)))
-        else:
-            bullets.append(("🧭","Above target by ~{} kcal → consider a lighter side or halving added fats.".format(-delta)))
+    # if abs(delta) >= 60:
+    #     if delta > 0:
+    #         bullets.append(("🧭","Below target by ~{} kcal → consider adding a small whole‑grain/legume side or a drizzle of olive oil.".format(delta)))
+    #     else:
+    #         bullets.append(("🧭","Above target by ~{} kcal → consider a lighter side or halving added fats.".format(-delta)))
     # Diet style / avoids
     if float(row["fit_diet_style"]) >= 0.99:
         bullets.append(("🥗","Matches your chosen diet style."))
@@ -384,7 +384,7 @@ def render_why_this(row, kcal_target:int):
 def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="rec"):
     # map rule-engine outputs to % for the bars
     overall_pct = _pct01(r["fit_score"])
-    cal_pct     = _pct01(r["fit_calorie"])
+    #cal_pct     = _pct01(r["fit_calorie"])
     diet_pct    = _pct01(r["fit_diet_style"])
     avoids_pct  = int(round(100*float(r["fit_no_avoids"])))
     pref_pct    = int(round(100*max(0.0, float(r["fit_prefer_bonus"]) - 1.0)/0.15))
@@ -430,8 +430,6 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
 
         st.markdown(
             f"""
-            <div class="metricrow"><div class="label">Calorie fit</div>
-              <div class="bar"><span style="width:{cal_pct}%"></span></div><div class="pct">{cal_pct}%</div></div>
             <div class="metricrow"><div class="label">Diet style</div>
               <div class="bar"><span style="width:{diet_pct}%"></span></div><div class="pct">{diet_pct}%</div></div>
             <div class="metricrow"><div class="label">No avoids</div>

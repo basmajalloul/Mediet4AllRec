@@ -77,8 +77,9 @@ def _health_modifiers(row, health: Dict) -> float:
 
 def compute_meal_fit_score(row, kcal_target: int, diet_prefs: Dict, health: Dict) -> Tuple[float, Dict]:
     cal = float(row["calories_kcal"]); dev = abs(cal - kcal_target)
-    cal_term = np.exp(-(dev**2) / (2 * (0.2 * max(200, kcal_target))**2))
-
+    #cal_term = np.exp(-(dev**2) / (2 * (0.2 * max(200, kcal_target))**2))
+    cal_term = 1.0
+    
     diet_ok = True
     if diet_prefs.get("vegan"): diet_ok = bool(row["is_vegan"])
     elif diet_prefs.get("vegetarian"): diet_ok = bool(row["is_vegetarian"])
@@ -91,8 +92,29 @@ def compute_meal_fit_score(row, kcal_target: int, diet_prefs: Dict, health: Dict
     ing   = set([a.lower() for a in _normalize_list(row.get("ingredients",""))])
     avoid_term = 0.0 if (avoid and (avoid & ing)) else 1.0
 
+    # --- Preference boost: set match + attributes + light synonyms
     prefer = set([a.lower() for a in _normalize_list(diet_prefs.get("prefer_ingredients",""))])
-    prefer_term = 1.0 + 0.15*(1.0 if (prefer and (prefer & ing)) else 0.0)
+
+    ing   = set([a.lower() for a in _normalize_list(row.get("ingredients",""))])
+    attrs = set([a.strip().lower() for a in _normalize_list(row.get("med_attributes",""))])
+
+    # Map attribute tags to phrases a user might put in preferences
+    ATTR_TO_PREF = {
+        "olive_oil": {"olive oil", "extra virgin olive oil", "evoo"},
+        "whole_grains": {"whole grains", "whole-wheat", "whole wheat", "bulgur",
+                        "brown rice", "oats", "barley", "farro", "quinoa"},
+        "legumes": {"legumes", "beans", "lentils", "chickpeas", "peas"},
+        "nuts_seeds": {"nuts", "seeds", "almonds", "walnuts", "sesame"},
+        # add more if you like
+    }
+
+    # If user prefers “olive oil” and the recipe has med_attribute 'olive_oil',
+    # count it as a hit even if the ingredient line is messy.
+    attr_hit = any(prefer & ATTR_TO_PREF.get(a, set()) for a in attrs)
+
+    ing_hit  = bool(prefer & ing)
+
+    prefer_term = 1.0 + (0.15 if (ing_hit or attr_hit) else 0.0)
 
     health_mod = _health_modifiers(row, health)
 

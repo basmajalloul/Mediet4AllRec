@@ -76,7 +76,7 @@ def build_recipe_index(df: pd.DataFrame):
 # ---------- Train a tiny learned re-scorer over rule features ----------
 @st.cache_resource(show_spinner=False)
 def train_rescorer(df: pd.DataFrame, per_meal_target: dict, diet_prefs: dict, health: dict):
-    FEATS = ["fit_calorie","fit_diet_style","fit_no_avoids","fit_prefer_bonus","fit_health_mod",
+    FEATS = ["fit_diet_style","fit_no_avoids","fit_prefer_bonus","fit_health_mod",
              "protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]
     df_all = df.copy()
     cal_list=diet_list=avoids_list=prefer_list=health_list=score_list=[]
@@ -92,7 +92,6 @@ def train_rescorer(df: pd.DataFrame, per_meal_target: dict, diet_prefs: dict, he
         health_list.append(dbg["health_mod"])
 
     df_all["fit_score"]        = score_list
-    df_all["fit_calorie"]      = cal_list
     df_all["fit_diet_style"]   = diet_list
     df_all["fit_no_avoids"]    = avoids_list
     df_all["fit_prefer_bonus"] = prefer_list
@@ -106,7 +105,7 @@ def train_rescorer(df: pd.DataFrame, per_meal_target: dict, diet_prefs: dict, he
     return model
 
 def apply_rescorer_blend(df_in: pd.DataFrame, model, alpha: float = 0.6):
-    FEATS = ["fit_calorie","fit_diet_style","fit_no_avoids","fit_prefer_bonus","fit_health_mod",
+    FEATS = ["fit_diet_style","fit_no_avoids","fit_prefer_bonus","fit_health_mod",
              "protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]
     X = df_in[FEATS].fillna(0.0).astype(float).values
     out = df_in.copy()
