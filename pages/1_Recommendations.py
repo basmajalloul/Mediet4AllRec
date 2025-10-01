@@ -166,7 +166,7 @@ grid_icon = "🔲"
 view_mode = st.radio(
     "View mode:",
     ["Compact", "Expanded"],
-    format_func=lambda x: f"{list_icon} Compact" if x=="Expanded" else f"{grid_icon} List",
+    format_func=lambda x: f"{list_icon} Expanded" if x=="Expanded" else f"{grid_icon} Compact",
     horizontal=True
 )
 

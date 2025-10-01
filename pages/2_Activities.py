@@ -378,7 +378,6 @@ else:
         }
         .stTooltipHoverTarget {
             /*height: 120px; */
-            padding: 0px;
             background: #fff;
             border-radius: 12px;
             margin: 6px;
@@ -388,6 +387,7 @@ else:
 
         .stTooltipHoverTarget button {
             border: 1px solid #e9eef4 !important;
+            padding: 20px 0px !important;
         } 
 
         .stTooltipHoverTarget button * {
