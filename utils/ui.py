@@ -146,11 +146,42 @@ def inject_css_and_title():
 # --- Global styles reused across pages (cards + metric bars + heading) ---
 
 def topbar_logo_and_title():
-    c1,c2 = st.columns([1,8])
-    with c1: st.image("download.png", width=150)
-    with c2:
-        st.markdown('<h1 id="meddiet"><span>Mediterranean</span> Diet Recommendation System</h1>', unsafe_allow_html=True)
-        st.markdown("<p id='title-caption'>Profile-based recommendations • Intake logging • Health-aware prioritization</p>", unsafe_allow_html=True)
+    # c1,c2 = st.columns([1,8])
+    # with c1: st.image("download.png", width=150)
+    # with c2:
+    #     st.markdown('<h1 id="meddiet"><span>Mediterranean</span> Diet Recommendation System</h1>', unsafe_allow_html=True)
+    #     st.markdown("<p id='title-caption'>Profile-based recommendations • Intake logging • Health-aware prioritization</p>", unsafe_allow_html=True)
+
+    st.markdown("""<style>
+        header {
+            display: none !important;        
+        }        
+        .stMain>div {
+            padding: 0px;
+        }
+
+        .app-header {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-content: center;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            background: #f9ad1a;
+        }
+
+        .app-header img {
+            width: 85px;
+        }
+
+        .app-header * {
+            color: #fff !important;
+        }</style>""", unsafe_allow_html=True)
+
+    st.markdown('<div class="app-header"><img src="https://mediet4allrec.streamlit.app/~/+/media/f14493f8876037d9ddffdf92032636f640ef9a78a75d84ad64455492.png">'
+    '<div class="tagline-holder"><h1 id="meddiet"><span>Mediterranean</span> Diet Recommendation System</h1>'
+    '<p id="title-caption">Profile-based recommendations • Intake logging • Health-aware prioritization</p></div></div>', unsafe_allow_html=True)
 
 # ---------------- energy banner (now supports live consumption) ----------------
 def energy_banner(total_kcal: int, per: Dict[str, int], df=None):

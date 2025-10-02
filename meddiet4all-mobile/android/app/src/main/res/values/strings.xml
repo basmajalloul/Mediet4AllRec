@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">meddiet4all</string>
+    <string name="title_activity_main">meddiet4all</string>
+    <string name="package_name">com.mediet4all.mobile</string>
+    <string name="custom_url_scheme">com.mediet4all.mobile</string>
+</resources>
