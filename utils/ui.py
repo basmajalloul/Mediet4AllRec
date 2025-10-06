@@ -153,13 +153,6 @@ def topbar_logo_and_title():
     #     st.markdown("<p id='title-caption'>Profile-based recommendations • Intake logging • Health-aware prioritization</p>", unsafe_allow_html=True)
 
     st.markdown("""<style>
-        header {
-            display: none !important;        
-        }        
-        .stMain>div {
-            padding: 0px;
-        }
-
         .app-header {
             display: flex;
             flex-direction: row;
@@ -172,14 +165,20 @@ def topbar_logo_and_title():
         }
 
         .app-header img {
-            width: 85px;
+            width: 85px;      
+            margin-right: 20px;
         }
 
         .app-header * {
             color: #fff !important;
-        }</style>""", unsafe_allow_html=True)
+        }
 
-    st.markdown('<div class="app-header"><img src="https://mediet4allrec.streamlit.app/~/+/media/f14493f8876037d9ddffdf92032636f640ef9a78a75d84ad64455492.png">'
+        h1#welcome-to-mediet4-all {
+            font-size: 30px;
+        }               
+        </style>""", unsafe_allow_html=True)
+
+    st.markdown('<div class="app-header"><img style="filter: brightness(0) invert(1);" src="https://www.mediet4all.eu/wp-content/uploads/2023/10/logo-site.svg">'
     '<div class="tagline-holder"><h1 id="meddiet"><span>Mediterranean</span> Diet Recommendation System</h1>'
     '<p id="title-caption">Profile-based recommendations • Intake logging • Health-aware prioritization</p></div></div>', unsafe_allow_html=True)
 
