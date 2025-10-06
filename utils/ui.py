@@ -175,7 +175,31 @@ def topbar_logo_and_title():
 
         h1#welcome-to-mediet4-all {
             font-size: 30px;
-        }               
+        }
+
+         @media (max-width: 768px) {
+            .app-header {
+                display: flex;
+                flex-direction: column;
+                flex-wrap: nowrap;
+                align-content: center;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 15px 5px;
+                margin-top: -4rem;
+            }
+
+            .app-header h1 {
+                font-size: 18px !important;
+            }
+
+            .app-header p {
+                font-weight: 400 !important;
+                font-size: 13px;
+                line-height: 1.2;
+            }
+                            }                      
         </style>""", unsafe_allow_html=True)
 
     st.markdown('<div class="app-header"><img style="filter: brightness(0) invert(1);" src="https://www.mediet4all.eu/wp-content/uploads/2023/10/logo-site.svg">'
