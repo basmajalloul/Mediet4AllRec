@@ -19,6 +19,8 @@ def auth_gate() -> dict:
     if user:
         _sidebar_status(user)
         return user
+    
+    st.markdown("""<div id="login-form"/>""", unsafe_allow_html=True)
 
     st.title("Welcome to Mediet4All")
     st.caption("Sign in or create an account to continue.")

@@ -15,7 +15,7 @@ today = date.today()
 
 ensure_session_keys()
 inject_css_and_title()
-topbar_logo_and_title()
+#topbar_logo_and_title()
 
 from utils.auth_ui import auth_gate
 user = auth_gate()

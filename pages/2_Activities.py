@@ -12,35 +12,7 @@ from meddiet_rules import derive_daily_calorie_target, split_meal_targets
 
 # ---------- Global CSS + Title (same vibe as other pages) ----------
 inject_css_and_title()
-topbar_logo_and_title()
-
-# ---------- Auth & Profile ----------
-user = auth_gate()
-user_id = user["id"]
-today = date.today()
-
-active_name = st.session_state.get("active_profile_name", "default")
-prof = (load_profile(user_id, active_name) or {})
-age        = int(prof.get("age", 30))
-height_cm  = int(prof.get("height_cm", 170))
-sex        = prof.get("sex", "Female")
-weight_kg  = float(prof.get("weight_kg", 70.0))
-activity   = prof.get("activity", "Light")
-goal       = prof.get("goal", "Maintain")
-pattern    = prof.get("pattern", "3_meals_1_snack")
-
-daily   = derive_daily_calorie_target(age, weight_kg, height_cm, sex, activity, goal)
-per_meal = split_meal_targets(daily, pattern)
-st.session_state["daily_cals"]    = daily
-st.session_state["__per_meal__"]  = per_meal
-
-foods = load_day_log(user_id, today) or []
-
-def minutes_to_burn(kcal_target, kind, intensity, weight):
-    met = _MET.get((kind,intensity), 5.0)
-    # kcal = MET × weight × hours
-    hours = kcal_target / (met * max(weight,40))
-    return int(round(hours * 60))
+#topbar_logo_and_title()
 
 # ---------- Page-specific micro-CSS to style cards + quick boxes ----------
 st.markdown("""
@@ -76,8 +48,125 @@ st.markdown("""
 .acttitle{font-weight:800;color:#263244}
 .actmeta{color:#5f6b7a;font-size:.9rem}
 #root > div:nth-child(1) > div.withScreencast > div > div > div > section > div.stMainBlockContainer.block-container > div {padding: 0px !important; box-shadow: none !important; border: 0px !important;}
+
+@media (max-width: 768px) {
+    header+section>div>div {
+        margin-top: -60px !important;
+    }
+    .mini-metrics {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0px 15px !important;
+    }
+
+    .mini-metrics .mm {
+        margin-bottom: 0px;
+    }
+
+    .pm {
+        margin-top: 25px !important;
+    }
+
+    .chip {
+        font-size: 12px !important;
+    }
+
+    .lbl {
+        margin-bottom: -8px;
+        font-size: 13px !important;
+    }
+            
+    h2#recommended-activities {
+        margin-bottom: 0px !important;
+        margin-top: 15px;
+    }
+}
+/* Cardify any Streamlit block/column that CONTAINS our marker element */
+.stHorizontalBlock  div[data-testid="stVerticalBlock"]:has(.qbox-start),
+.block-container div[data-testid="column"]:has(.qbox-start){
+  background:#fff;
+  border:1px solid #e9eef4;
+  border-radius:14px;
+  padding:14px 16px;
+  box-shadow:0 4px 14px rgba(18,38,63,0.06);
+}
+
+/* Optional: tighten spacing for inputs inside quick cards */
+.block-container div[data-testid="stVerticalBlock"]:has(.qbox-start) .stNumberInput,
+.block-container div[data-testid="column"]:has(.qbox-start) .stNumberInput { margin-bottom:.35rem; }
+
+.block-container div[data-testid="stVerticalBlock"]:has(.qbox-start) .stButton>button,
+.block-container div[data-testid="column"]:has(.qbox-start) .stButton>button{
+  width:100%; border-radius:10px; padding:10px 16px; font-weight:700;
+}
+
+.quickgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px}
+@media (min-width: 1120px){ .quickgrid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+
+.qbtn{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border:1px solid #e7edf6;background:#fff;border-radius:12px;padding:10px 12px;
+  box-shadow:0 2px 8px rgba(18,38,63,0.04);font-weight:800;cursor:pointer;
+}
+.qbtn:hover{background:#f6f9ff;border-color:#dbe7fb}
+.qbtn .l{display:flex;align-items:center;gap:8px;color:#1a3d7c}
+.qbtn .ico{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:#eef7ff;border:1px solid #e1ecfb}
+.qbtn .badge{font-size:.78rem;font-weight:800;color:#0f2a56;background:#eef2f7;border:1px solid #e4e9f1;
+  padding:3px 8px;border-radius:999px}
+
+/* Softer KPI for Today */
+.kpi{
+  padding:14px 0px;
+}
+.kpi .head{display:flex;align-items:center;gap:10px;margin-bottom:6px;color:#263244;font-weight:800}
+.kpi .ico{width:30px;height:30px;border-radius:10px;background:#f1f6ff;border:1px solid #e3ecff;
+  display:flex;align-items:center;justify-content:center}
+.kpi .val{font-weight:900;font-size:1.35rem;color:#162a52}
+.kpi .sub{font-size:.9rem;color:#5f6b7a}
+.row-sep {height: 10px; display: block;}            
+
+.mini-metrics{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-top:8px}
+.mm{background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+  margin: 20px 0;
+  text-align: center;}
+.mm .lbl{font-weight:700;color:#1a3d7c;font-size:0.95rem}
+.mm .val{font-size:1.35rem;font-weight:900;margin-top:2px;color:#162a52}
+.pm{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:#4b5563}
+.pm .chip{background:#eef2f7;border:1px solid #e4e9f1;color:#334155;padding:3px 8px;border-radius:999px;font-size:.82rem;font-weight:700}
 </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+# ---------- Auth & Profile ----------
+user = auth_gate()
+user_id = user["id"]
+today = date.today()
+
+active_name = st.session_state.get("active_profile_name", "default")
+prof = (load_profile(user_id, active_name) or {})
+age        = int(prof.get("age", 30))
+height_cm  = int(prof.get("height_cm", 170))
+sex        = prof.get("sex", "Female")
+weight_kg  = float(prof.get("weight_kg", 70.0))
+activity   = prof.get("activity", "Light")
+goal       = prof.get("goal", "Maintain")
+pattern    = prof.get("pattern", "3_meals_1_snack")
+
+daily   = derive_daily_calorie_target(age, weight_kg, height_cm, sex, activity, goal)
+per_meal = split_meal_targets(daily, pattern)
+st.session_state["daily_cals"]    = daily
+st.session_state["__per_meal__"]  = per_meal
+
+foods = load_day_log(user_id, today) or []
+
+def minutes_to_burn(kcal_target, kind, intensity, weight):
+    met = _MET.get((kind,intensity), 5.0)
+    # kcal = MET × weight × hours
+    hours = kcal_target / (met * max(weight,40))
+    return int(round(hours * 60))
 
 # ---------- Tiny kcal estimators (local, overridable) ----------
 _MET = {
@@ -169,24 +258,6 @@ def energy_banner_compact(daily_kcal: int, per_meal: dict, user_id: str, d: date
     net_kcal = food_kcal - activity_kcal
 
 
-    # subtle CSS tweaks for the compact layout
-    st.markdown("""
-    <style>
-      .mini-metrics{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-top:8px}
-      .mm{background: #fff;
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        border-radius: 14px;
-        padding: 12px 14px;
-        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
-        margin: 20px 0;
-        text-align: center;}
-      .mm .lbl{font-weight:700;color:#1a3d7c;font-size:0.95rem}
-      .mm .val{font-size:1.35rem;font-weight:900;margin-top:2px;color:#162a52}
-      .pm{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:#4b5563}
-      .pm .chip{background:#eef2f7;border:1px solid #e4e9f1;color:#334155;padding:3px 8px;border-radius:999px;font-size:.82rem;font-weight:700}
-    </style>
-    """, unsafe_allow_html=True)
-
     # one card with four mini metrics + per-meal line
     st.markdown(f"""
     <div class="metriccard">
@@ -223,62 +294,6 @@ def energy_banner_compact(daily_kcal: int, per_meal: dict, user_id: str, d: date
       </div>
     </div>
     """, unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-/* Cardify any Streamlit block/column that CONTAINS our marker element */
-.stHorizontalBlock  div[data-testid="stVerticalBlock"]:has(.qbox-start),
-.block-container div[data-testid="column"]:has(.qbox-start){
-  background:#fff;
-  border:1px solid #e9eef4;
-  border-radius:14px;
-  padding:14px 16px;
-  box-shadow:0 4px 14px rgba(18,38,63,0.06);
-}
-
-/* Optional: tighten spacing for inputs inside quick cards */
-.block-container div[data-testid="stVerticalBlock"]:has(.qbox-start) .stNumberInput,
-.block-container div[data-testid="column"]:has(.qbox-start) .stNumberInput { margin-bottom:.35rem; }
-
-.block-container div[data-testid="stVerticalBlock"]:has(.qbox-start) .stButton>button,
-.block-container div[data-testid="column"]:has(.qbox-start) .stButton>button{
-  width:100%; border-radius:10px; padding:10px 16px; font-weight:700;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-/* Quick actions grid */
-.quickgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px}
-@media (min-width: 1120px){ .quickgrid{grid-template-columns:repeat(3,minmax(0,1fr));} }
-
-.qbtn{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  border:1px solid #e7edf6;background:#fff;border-radius:12px;padding:10px 12px;
-  box-shadow:0 2px 8px rgba(18,38,63,0.04);font-weight:800;cursor:pointer;
-}
-.qbtn:hover{background:#f6f9ff;border-color:#dbe7fb}
-.qbtn .l{display:flex;align-items:center;gap:8px;color:#1a3d7c}
-.qbtn .ico{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  background:#eef7ff;border:1px solid #e1ecfb}
-.qbtn .badge{font-size:.78rem;font-weight:800;color:#0f2a56;background:#eef2f7;border:1px solid #e4e9f1;
-  padding:3px 8px;border-radius:999px}
-
-/* Softer KPI for Today */
-.kpi{
-  padding:14px 0px;
-}
-.kpi .head{display:flex;align-items:center;gap:10px;margin-bottom:6px;color:#263244;font-weight:800}
-.kpi .ico{width:30px;height:30px;border-radius:10px;background:#f1f6ff;border:1px solid #e3ecff;
-  display:flex;align-items:center;justify-content:center}
-.kpi .val{font-weight:900;font-size:1.35rem;color:#162a52}
-.kpi .sub{font-size:.9rem;color:#5f6b7a}
-.row-sep {height: 10px; display: block;}
-</style>
-""", unsafe_allow_html=True)
-
-
 
 # ---- call it once (replace the two banners) ----
 energy_banner_compact(daily, per_meal, user_id, today)

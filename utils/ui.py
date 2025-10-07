@@ -139,6 +139,69 @@ def inject_css_and_title():
         }
         .stSidebar p {
             font-size: 14px;
+        }
+                
+        .app-header {
+            display: none !important;        
+        }
+        @media (max-width: 768px) {
+            header+section>div {
+                padding-top: 20px !important;
+                padding-bottom: 20px !important;
+            }
+            .stRadio {
+                width: 100% !important;
+                margin-bottom: 15px !important;
+            } 
+            .stColumn:has(.compact_card)>div a.link {
+                margin-top: -25px !important;
+            }
+            .stColumn:has(.compact_card)>div {
+                margin-top: -25px !important;
+                margin-bottom: -10px !important;
+            }
+             .stColumn:has(.compact_card)>div .stHorizontalBlock {
+                margin-bottom: -15px !important;    
+            }
+            .stColumn:not(:has(.compact_card)>div) a.extended-link {
+                margin-top: -5px !important;
+                margin-bottom: 10px !important;
+            }
+            .metricmain {
+                font-size: 1rem;
+            }
+
+            .metricsub {
+                font-size: 0.9rem;
+                line-height: 1.4;
+            }
+
+            .metriccard {
+                padding: 15px;
+            }
+
+            h2#daily-recommendations {
+                margin-bottom: 0px !important;
+                padding-bottom: 0;
+                font-size: 21px !important;
+                margin-top: 20px;
+            } 
+            .title {
+                height: auto !important;
+                margin-bottom: 10px !important;
+            }
+
+            .sub {
+                margin-bottom: 0px !important;
+            }
+
+            span.badge {
+                margin-top: -6px !important;
+            }
+
+            .st-af > button {
+                width: 25%;
+            }                                 
         }                    
     </style>
     """, unsafe_allow_html=True)
@@ -179,27 +242,9 @@ def topbar_logo_and_title():
 
          @media (max-width: 768px) {
             .app-header {
-                display: flex;
-                flex-direction: column;
-                flex-wrap: nowrap;
-                align-content: center;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                padding: 15px 5px;
-                margin-top: -4rem;
-            }
-
-            .app-header h1 {
-                font-size: 18px !important;
-            }
-
-            .app-header p {
-                font-weight: 400 !important;
-                font-size: 13px;
-                line-height: 1.2;
-            }
-                            }                      
+                display: none;
+            }    
+        }                      
         </style>""", unsafe_allow_html=True)
 
     st.markdown('<div class="app-header"><img style="filter: brightness(0) invert(1);" src="https://www.mediet4all.eu/wp-content/uploads/2023/10/logo-site.svg">'
@@ -539,7 +584,7 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
             st.rerun()
                 
         st.markdown(
-            f"<a href='{_similar_google(str(r['name']), str(r['cuisine']))}' target='_blank' class='link'>Find similar recipe ↗︎</a>",
+            f"<a href='{_similar_google(str(r['name']), str(r['cuisine']))}' target='_blank' class='link extended-link'>Find similar recipe ↗︎</a>",
             unsafe_allow_html=True
         )
 
@@ -637,7 +682,8 @@ def logged_section(rows: List[dict], per_meal_target: dict):
 
 def render_recipe_card_compact(r, *, kcal_target, diet_prefs, health, log_key_prefix="rec"):
     overall_pct = _pct01(r["fit_score"])
-    
+    st.markdown(f"<div class='compact_card'/>", unsafe_allow_html=True)
+   
     # tags
     pills = []
     if r.get("diet_tags"):

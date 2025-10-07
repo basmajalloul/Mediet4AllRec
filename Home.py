@@ -10,7 +10,7 @@ from meddiet_rules import derive_daily_calorie_target, split_meal_targets
 
 ensure_session_keys()
 inject_css_and_title()
-topbar_logo_and_title()
+#topbar_logo_and_title()
 
 today = date.today()
 
@@ -51,6 +51,89 @@ st.markdown("""
 .coach .dot{width:10px;height:10px;border-radius:50%}
 .progressbar{height:9px;background:#eef2f7;border-radius:7px;overflow:hidden}
 .progressbar>span{display:block;height:100%;border-radius:7px;background:var(--grad);transition:width .4s ease}
+.qa-card{background:#fff;border:1px solid #e9eef4;border-radius:18px;
+         box-shadow:0 10px 28px rgba(18,38,63,.06);padding:20px 22px;margin:10px 0 16px}
+.qa-title{margin:0 0 12px;font-weight:900;font-size:1.25rem}
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.qa-tile{display:flex;align-items:center;gap:12px;justify-content:flex-start;
+         padding:14px 16px;border-radius:14px;border:1px solid #e6edf6;
+         background:radial-gradient(120% 120% at 0% 0%,#ffffff 0%,#f7faff 100%);
+         text-decoration:none;color:#0f172a;font-weight:800;
+         box-shadow:0 8px 18px rgba(18,38,63,.06); transition:transform .14s ease,box-shadow .14s ease}
+.qa-tile:hover{transform:translateY(-2px); box-shadow:0 12px 26px rgba(18,38,63,.10)}
+.qa-tile:active{transform:translateY(0)}
+.qa-emoji{font-size:1.15rem;filter:drop-shadow(0 2px 4px rgba(18,38,63,.08))}
+.qa-sub{color:#64748b;font-weight:600;font-size:.9rem}
+.qa-grid a {text-decoration: none;}
+.stat-card{background:#fff;border:1px solid #e9eef4;border-radius:16px;padding:16px 18px 35px 18px;
+           box-shadow:0 10px 28px rgba(18,38,63,.06);margin-bottom:14px;}
+.stat-card h3{margin:0 0 10px}
+
+/* 2-up grid, tighter spacing */
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 24px}
+@media (max-width:780px){ .statgrid{grid-template-columns:1fr} }
+
+.statbox{display:flex;flex-direction:column;gap:6px;padding:6px 8px;border-radius:12px}
+.s-head{font-weight:800;color:#0f172a;margin-bottom:0}
+.s-meta{color:#64748b;font-size:.9rem;margin-bottom:2px}
+
+/* bar + pill on the same row */
+.barwrap{display:flex;align-items:center;gap:12px;margin-top:-10px;margin-bottom:-15px;}
+.bar{flex:1;height:10px;background:#eef2f7;border-radius:999px;overflow:hidden}
+.fill{height:100%;border-radius:999px;background:linear-gradient(90deg, #f9ad1a, #ee6a04);}
+
+/* pill stays right of bar, text centered */
+.pill{display:inline-flex;align-items:center;justify-content:center;
+     padding:4px 12px;border-radius:999px;border:1px solid #e6edf6;
+     font-weight:700;text-align:center;min-width:92px}
+.pill.good{background:#ecfdf5;color:#065f46}
+.pill.warn{background:#fff7ed;color:#92400e}
+.pill.bad{background:#fef2f2;color:#991b1b}
+.meals-tiles{background:#fff;border:1px solid #e9eef4;border-radius:16px;
+             box-shadow:0 10px 28px rgba(18,38,63,.06);padding:16px 18px;margin-top:8px}
+.meals-tiles h3{margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+
+/* tile */
+.tile{display:flex;gap:12px;align-items:flex-start;
+      padding:14px;border-radius:16px;border:1px solid #e6edf6;
+      background:radial-gradient(120% 120% at 0% 0%,#ffffff 0%,#f7faff 100%);
+      box-shadow:0 8px 18px rgba(18,38,63,.06);transition:transform .14s ease,box-shadow .14s ease}
+.tile:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(18,38,63,.10)}
+
+.icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+      font-size:22px;background:#eef6ff;border:1px solid #dde8f6}
+
+.body{flex:1;min-width:0}
+.head-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.head{font-weight:900;color:#0f172a;margin-bottom:2px}
+.sub{color:#64748b;font-size:.95rem}
+
+/* kcal chip in header (no overlay) */
+.kchip{display:inline-flex;align-items:center;justify-content:center;
+       padding:6px 12px;border-radius:999px;background:#f6f9ff;border:1px solid #e6edf6;
+       font-weight:800;color:#065f46;white-space:nowrap}
+
+/* tags row */
+.tags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* compact, centered macro tags with distinct tints */
+.tag{display:inline-flex;align-items:center;justify-content:center;
+     height:26px;padding:0 12px;border-radius:999px;font-weight:800;border:1px solid}
+.tag.prot{background:#e0f2fe;border-color:#bfe3fb;color:#074d7a}
+.tag.fiber{background:#e8f9ef;border-color:#c9f0d9;color:#0f5132}
+.tag.sod.good{background:#ecfdf5;border-color:#c6f3df;color:#065f46}
+.tag.sod.warn{background:#fff7ed;border-color:#fde5c3;color:#92400e}
+.tag.sod.bad{background:#fef2f2;border-color:#f5c2c7;color:#991b1b}
+
+/* kcal delta chip */
+.delta{display:inline-flex;align-items:center;justify-content:center;
+       height:26px;padding:0 12px;border-radius:999px;border:1px solid #e6edf6;font-weight:800}
+.delta.good{background:#ecfdf5;color:#065f46}
+.delta.warn{background:#fff7ed;color:#92400e}
+.delta.bad{background:#fef2f2;color:#991b1b}
+.tags span {font-size: 11px;}
+span.kchip {font-size: 13px;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -116,6 +199,8 @@ st.session_state["__per_meal__"] = per_meal
 # --- hydrate session for UI widgets that rely on it ---
 st.session_state["logged"] = [str(x["recipe_id"]) for x in rows]
 st.session_state["score_today"] = len(st.session_state["logged"])
+
+# st.markdown("""<div id="app-container"/>""", unsafe_allow_html=True)
 
 energy_banner(daily, per_meal, df=st.session_state["df"])
 
@@ -238,26 +323,6 @@ ldf = _df_logged()
 tot = {k: float(ldf[k].sum()) if k in ldf.columns else 0.0
        for k in ["calories_kcal","protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]}
 
-# ---------- Quick actions (hero)
-st.markdown("""
-<style>
-.qa-card{background:#fff;border:1px solid #e9eef4;border-radius:18px;
-         box-shadow:0 10px 28px rgba(18,38,63,.06);padding:20px 22px;margin:10px 0 16px}
-.qa-title{margin:0 0 12px;font-weight:900;font-size:1.25rem}
-.qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
-.qa-tile{display:flex;align-items:center;gap:12px;justify-content:flex-start;
-         padding:14px 16px;border-radius:14px;border:1px solid #e6edf6;
-         background:radial-gradient(120% 120% at 0% 0%,#ffffff 0%,#f7faff 100%);
-         text-decoration:none;color:#0f172a;font-weight:800;
-         box-shadow:0 8px 18px rgba(18,38,63,.06); transition:transform .14s ease,box-shadow .14s ease}
-.qa-tile:hover{transform:translateY(-2px); box-shadow:0 12px 26px rgba(18,38,63,.10)}
-.qa-tile:active{transform:translateY(0)}
-.qa-emoji{font-size:1.15rem;filter:drop-shadow(0 2px 4px rgba(18,38,63,.08))}
-.qa-sub{color:#64748b;font-weight:600;font-size:.9rem}
-.qa-grid a {text-decoration: none;}
-</style>
-""", unsafe_allow_html=True)
-
 st.markdown("""
 <div class="qa-card">
   <div class="qa-title">Quick actions</div>
@@ -284,35 +349,6 @@ st.markdown("""
 
 
 # ---------- Main stack: stats then feed (one under the other)
-
-st.markdown("""
-<style>
-.stat-card{background:#fff;border:1px solid #e9eef4;border-radius:16px;padding:16px 18px 35px 18px;
-           box-shadow:0 10px 28px rgba(18,38,63,.06);margin-bottom:14px;}
-.stat-card h3{margin:0 0 10px}
-
-/* 2-up grid, tighter spacing */
-.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 24px}
-@media (max-width:780px){ .statgrid{grid-template-columns:1fr} }
-
-.statbox{display:flex;flex-direction:column;gap:6px;padding:6px 8px;border-radius:12px}
-.s-head{font-weight:800;color:#0f172a;margin-bottom:0}
-.s-meta{color:#64748b;font-size:.9rem;margin-bottom:2px}
-
-/* bar + pill on the same row */
-.barwrap{display:flex;align-items:center;gap:12px;margin-top:-10px;margin-bottom:-15px;}
-.bar{flex:1;height:10px;background:#eef2f7;border-radius:999px;overflow:hidden}
-.fill{height:100%;border-radius:999px;background:linear-gradient(90deg, #f9ad1a, #ee6a04);}
-
-/* pill stays right of bar, text centered */
-.pill{display:inline-flex;align-items:center;justify-content:center;
-     padding:4px 12px;border-radius:999px;border:1px solid #e6edf6;
-     font-weight:700;text-align:center;min-width:92px}
-.pill.good{background:#ecfdf5;color:#065f46}
-.pill.warn{background:#fff7ed;color:#92400e}
-.pill.bad{background:#fef2f2;color:#991b1b}
-</style>
-""", unsafe_allow_html=True)
 
 def _pct_and_status(value, target, invert=False):
     if target <= 0:
@@ -350,59 +386,6 @@ today_html = (
     + "</div></div>"
 )
 st.markdown(today_html, unsafe_allow_html=True)
-
-# spacer if you like
-st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-.meals-tiles{background:#fff;border:1px solid #e9eef4;border-radius:16px;
-             box-shadow:0 10px 28px rgba(18,38,63,.06);padding:16px 18px;margin-top:8px}
-.meals-tiles h3{margin:0 0 12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
-
-/* tile */
-.tile{display:flex;gap:12px;align-items:flex-start;
-      padding:14px;border-radius:16px;border:1px solid #e6edf6;
-      background:radial-gradient(120% 120% at 0% 0%,#ffffff 0%,#f7faff 100%);
-      box-shadow:0 8px 18px rgba(18,38,63,.06);transition:transform .14s ease,box-shadow .14s ease}
-.tile:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(18,38,63,.10)}
-
-.icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-      font-size:22px;background:#eef6ff;border:1px solid #dde8f6}
-
-.body{flex:1;min-width:0}
-.head-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.head{font-weight:900;color:#0f172a;margin-bottom:2px}
-.sub{color:#64748b;font-size:.95rem}
-
-/* kcal chip in header (no overlay) */
-.kchip{display:inline-flex;align-items:center;justify-content:center;
-       padding:6px 12px;border-radius:999px;background:#f6f9ff;border:1px solid #e6edf6;
-       font-weight:800;color:#065f46;white-space:nowrap}
-
-/* tags row */
-.tags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-
-/* compact, centered macro tags with distinct tints */
-.tag{display:inline-flex;align-items:center;justify-content:center;
-     height:26px;padding:0 12px;border-radius:999px;font-weight:800;border:1px solid}
-.tag.prot{background:#e0f2fe;border-color:#bfe3fb;color:#074d7a}
-.tag.fiber{background:#e8f9ef;border-color:#c9f0d9;color:#0f5132}
-.tag.sod.good{background:#ecfdf5;border-color:#c6f3df;color:#065f46}
-.tag.sod.warn{background:#fff7ed;border-color:#fde5c3;color:#92400e}
-.tag.sod.bad{background:#fef2f2;border-color:#f5c2c7;color:#991b1b}
-
-/* kcal delta chip */
-.delta{display:inline-flex;align-items:center;justify-content:center;
-       height:26px;padding:0 12px;border-radius:999px;border:1px solid #e6edf6;font-weight:800}
-.delta.good{background:#ecfdf5;color:#065f46}
-.delta.warn{background:#fff7ed;color:#92400e}
-.delta.bad{background:#fef2f2;color:#991b1b}
-.tags span {font-size: 11px;}
-span.kchip {font-size: 13px;}
-</style>
-""", unsafe_allow_html=True)
 
 from utils.state import ORDERED_MEALS  # or define: ["Breakfast","Lunch","Dinner","Snack"]
 
