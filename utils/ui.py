@@ -245,7 +245,7 @@ def inject_css_and_title():
                 display: inline !important;
             }
             .tile {
-                max-width: calc(100% - 40px);
+                max-width: calc(100% - (2rem + 40px));
                 display: flex;
                 flex-wrap: wrap;
                 flex-direction: row;
