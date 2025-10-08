@@ -147,6 +147,25 @@ def inject_css_and_title():
         .stMain:has(#login-form) button {
             margin-bottom: 5px !important;
         }
+        section[data-testid="stSidebar"] {
+            background: orange;
+        }
+
+        section[data-testid="stSidebar"] * {
+            color: #fff !important;
+        }
+            
+        section[data-testid="stSidebar"] a[aria-current="page"] {
+            background-color: #fff !important;
+            color: #ffa500 !important;
+            font-weight: 800 !important;
+            border-radius: 0px;
+            padding: 7px 10px;
+        }
+            
+        section[data-testid="stSidebar"] a[aria-current="page"] span {
+            color: #ffa500 !important;
+        }
         @media (max-width: 768px) {
             header+section>div {
                 padding-top: 20px !important;
@@ -300,28 +319,7 @@ def inject_css_and_title():
             header+section {
                 margin-top: 20px;
             }
-
-            section[data-testid="stSidebar"] {
-                width: 100vw !important;
-                background: orange;
-            }
-
-            section[data-testid="stSidebar"] * {
-                color: #fff !important;
-            }
-                
-            section[data-testid="stSidebar"] a[aria-current="page"] {
-                background-color: #fff !important;
-                color: #ffa500 !important;
-                font-weight: 800 !important;
-                border-radius: 0px;
-                padding: 7px 10px;
-            }
-                
-            section[data-testid="stSidebar"] a[aria-current="page"] span {
-                color: #ffa500 !important;
-            }
-                
+               
             section[data-testid="stSidebar"] button {
                 background: none !important;
             }
