@@ -171,11 +171,11 @@ def inject_css_and_title():
                 margin-bottom: 10px !important;
             }
             .metricmain {
-                font-size: 1rem;
+                font-size: 14px !important;
             }
 
             .metricsub {
-                font-size: 0.9rem;
+                font-size: 14px;
                 line-height: 1.4;
             }
 
