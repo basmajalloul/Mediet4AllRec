@@ -147,25 +147,6 @@ def inject_css_and_title():
         .stMain:has(#login-form) button {
             margin-bottom: 5px !important;
         }
-        section[data-testid="stSidebar"] {
-            background: orange;
-        }
-
-        section[data-testid="stSidebar"] * {
-            color: #fff !important;
-        }
-            
-        section[data-testid="stSidebar"] a[aria-current="page"] {
-            background-color: #fff !important;
-            color: #ffa500 !important;
-            font-weight: 800 !important;
-            border-radius: 0px;
-            padding: 7px 10px;
-        }
-            
-        section[data-testid="stSidebar"] a[aria-current="page"] span {
-            color: #ffa500 !important;
-        }
         @media (max-width: 768px) {
             header+section>div {
                 padding-top: 20px !important;
@@ -319,7 +300,27 @@ def inject_css_and_title():
             header+section {
                 margin-top: 20px;
             }
-               
+
+            section[data-testid="stSidebar"] {
+                background: orange;
+            }
+
+            section[data-testid="stSidebar"] * {
+                color: #fff !important;
+            }
+                
+            section[data-testid="stSidebar"] a[aria-current="page"] {
+                background-color: #fff !important;
+                color: #ffa500 !important;
+                font-weight: 800 !important;
+                border-radius: 0px;
+                padding: 7px 10px;
+            }
+                
+            section[data-testid="stSidebar"] a[aria-current="page"] span {
+                color: #ffa500 !important;
+            }
+                
             section[data-testid="stSidebar"] button {
                 background: none !important;
             }
@@ -327,6 +328,36 @@ def inject_css_and_title():
             #root > div:nth-child(1) > div > div > a {
                 display: none !important;
             }
+                
+            .stMetric {
+                padding: 20px;
+                text-align: center;
+                border-radius: 5px;
+                border: 1px solid #e6edf6;
+                background: radial-gradient(120% 120% at 0% 0%, #ffffff 0%, #f7faff 100%);
+                box-shadow: 0 8px 18px rgba(18, 38, 63, .06);
+                transition: transform .14s ease, box-shadow .14s ease;
+            }
+
+            .stMetric > div > label {
+                text-align: center !important;
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-content: center;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .stMetric > div > label > div {
+                width: auto;
+            }
+
+            div[data-testid="stMetricValue"] div {
+                font-weight: bold;
+                font-size: 29px;
+            }
+
                              
         }                    
     </style>

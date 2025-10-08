@@ -71,6 +71,9 @@ st.markdown("""
 
 /* 2-up grid, tighter spacing */
 .statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 24px}
+.pill {
+    font-size: 11px;
+}
 @media (max-width:780px){ .statgrid{grid-template-columns:1fr} }
 
 .statbox{display:flex;flex-direction:column;gap:6px;padding:6px 8px;border-radius:12px}
