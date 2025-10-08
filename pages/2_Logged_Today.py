@@ -19,7 +19,7 @@ st.session_state["__user_id__"] = user["id"]
 today = date.today()
 
 user_name = user.get("user_metadata", {}).get("name") or user.get("email", "User")
-st.markdown(f"### 👋 Welcome back, **{user_name.split('@')[0].title()}**!")
+st.markdown(f"<h3 class='welcome-back'>👋 Welcome back, <b>{user_name.split('@')[0].title()}</b>!</h3>", unsafe_allow_html=True)
 
 def hydrate_logged_from_db():
     # (a) re-fetch if dirty or first time today

@@ -273,7 +273,8 @@ def inject_css_and_title():
 
             .tag {
                 height: 22px;
-            }                                
+            }
+                             
         }                    
     </style>
     """, unsafe_allow_html=True)
@@ -686,6 +687,9 @@ def meal_block_html(meal: str, rows: List[dict], logged_kcal: int, target_kcal: 
       .p>span{{background:#2db483}} .c>span{{background:#2a7df0}} .f>span{{background:#f59e0b}}
       .rm{{border:1px solid #f1c49c;background:#fff;border-radius:8px;padding:6px 10px;color:#9a2a0a; font-size: 12px; font-weight: bold;}}
       .mh-btn{{border: 1px solid #777;border-radius: 10px;padding: 4px 10px;color: #777;background: #fff;font-size: 11px;font-weight: bold;}}
+      @media(max-width: 768px) {{.mh-bar{{width: 80px;}}.mealbox > div:nth-child(1)  > div:nth-child(3) > div:nth-child(1){{font-size: 11px;}}  button.mh-btn {{display: none;}} .mealname {{font-weight: 700;}}
+      .logged-row {{ display: flex;  flex-direction: column; }} .logged-row>div>div:nth-child(2) {{margin-bottom: 10px;}}  .mini+div>div {{display: none; }}  .mini+div>button {{ margin-top: 5px; }}
+      }}  
     </style>
     """
     def row_html(r):
