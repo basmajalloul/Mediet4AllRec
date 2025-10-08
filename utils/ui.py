@@ -289,6 +289,8 @@ def inject_css_and_title():
                 
             header {
                 background: orange !important;
+                height: 5rem !important;
+                padding-top: 1.5rem;
             }
 
             header * {
