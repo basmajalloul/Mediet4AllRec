@@ -311,9 +311,15 @@ def inject_css_and_title():
             }
                 
             section[data-testid="stSidebar"] a[aria-current="page"] {
-                background-color: #f9ad1a !important;
-                color: #fff !important;
+                background-color: #fff !important;
+                color: #ffa500 !important;
                 font-weight: 800 !important;
+                border-radius: 0px;
+                padding: 7px 10px;
+            }
+                
+            section[data-testid="stSidebar"] a[aria-current="page"] span {
+                color: #ffa500 !important;
             }
                 
             section[data-testid="stSidebar"] button {
