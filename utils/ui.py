@@ -182,6 +182,14 @@ def inject_css_and_title():
             .metriccard {
                 padding: 15px;
             }
+                
+            .metricicon {
+                width: 29px !important;
+                height: 29px;
+                display: flex;
+                min-width: 29px;
+                font-size: 15px !important;
+            }
 
             h2#daily-recommendations {
                 margin-bottom: 0px !important;
