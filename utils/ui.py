@@ -227,6 +227,9 @@ def inject_css_and_title():
                 flex-wrap: nowrap;
                 align-content: center;
                 justify-content: center;
+            }
+            .st-emotion-cache-4rsbii:has(#login-form) .st-af > button {
+                width: 33% !important;    
             }  
             .welcome-back {
                 font-size: 22px !important;
@@ -251,10 +254,10 @@ def inject_css_and_title():
                 flex-direction: row;
             }
 
-            .icon {
-                width: 35px;
-                height: 35px;
-                font-size: 18px;
+            .tile .icon {
+                width: 35px !important;
+                height: 35px !important;
+                font-size: 18px !important;
             }
 
             .body {
@@ -274,7 +277,44 @@ def inject_css_and_title():
             .tag {
                 height: 22px;
             }
-                             
+                
+            .profile-welcome {
+                margin-top: 50px !important;    
+            }
+
+            h3#dietary-style-and-constraints,   
+            h3#health-conditions {
+                font-size: 21px !important;
+            }
+                
+            header {
+                background: orange !important;
+            }
+
+            header * {
+                color: #fff !important;
+            }
+
+            header+section {
+                margin-top: 20px;
+            }
+
+            section[data-testid="stSidebar"] {
+                width: 100vw !important;
+                min-width: calc(100vw - 10px) !important;
+                background: orange;
+            }
+
+            section[data-testid="stSidebar"] * {
+                color: #fff !important;
+            }
+                
+            section[data-testid="stSidebar"] a[aria-current="page"] {
+                background-color: #f9ad1a !important;
+                color: #fff !important;
+                font-weight: 800 !important;
+            }
+                            
         }                    
     </style>
     """, unsafe_allow_html=True)
@@ -688,7 +728,8 @@ def meal_block_html(meal: str, rows: List[dict], logged_kcal: int, target_kcal: 
       .rm{{border:1px solid #f1c49c;background:#fff;border-radius:8px;padding:6px 10px;color:#9a2a0a; font-size: 12px; font-weight: bold;}}
       .mh-btn{{border: 1px solid #777;border-radius: 10px;padding: 4px 10px;color: #777;background: #fff;font-size: 11px;font-weight: bold;}}
       @media(max-width: 768px) {{.mh-bar{{width: 80px;}}.mealbox > div:nth-child(1)  > div:nth-child(3) > div:nth-child(1){{font-size: 11px;}}  button.mh-btn {{display: none;}} .mealname {{font-weight: 700;}}
-      .logged-row {{ display: flex;  flex-direction: column; }} .logged-row>div>div:nth-child(2) {{margin-bottom: 10px;}}  .mini+div>div {{display: none; }}  .mini+div>button {{ margin-top: 5px; }}
+      .logged-row {{ display: flex;  flex-direction: column; }} .logged-row>div>div:nth-child(2) {{margin-bottom: 10px;}}  .mini+div>div {{display: none; }}  .mini+div>button {{ margin-top: -15px !important;  font-size: 11px !important;  padding: 4px 5px !important; }} .mini {{ display: none; }} 
+
       }}  
     </style>
     """
