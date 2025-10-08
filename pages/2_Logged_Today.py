@@ -18,6 +18,9 @@ user_id = user["id"]
 st.session_state["__user_id__"] = user["id"]
 today = date.today()
 
+user_name = user.get("user_metadata", {}).get("name") or user.get("email", "User")
+st.markdown(f"### 👋 Welcome back, **{user_name.split('@')[0].title()}**!")
+
 def hydrate_logged_from_db():
     # (a) re-fetch if dirty or first time today
     key = f"__hydrated_log__:{today.isoformat()}"
@@ -42,7 +45,6 @@ def hydrate_logged_from_db():
     st.session_state["score_today"] = len(effective)
 
 hydrate_logged_from_db()
-
 
 # hydrate from DB (cache per session/day)
 key = f"__hydrated_log__:{today.isoformat()}"

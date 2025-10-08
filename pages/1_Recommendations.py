@@ -96,6 +96,9 @@ st.session_state["__per_meal__"] = per_meal
 st.session_state["logged"] = [str(x["recipe_id"]) for x in rows]
 st.session_state["score_today"] = len(st.session_state["logged"])
 
+user_name = user.get("user_metadata", {}).get("name") or user.get("email", "User")
+st.markdown(f"<h3 class='welcome-back'>👋 Welcome back, <b>{user_name.split('@')[0].title()}</b>!</h3>", unsafe_allow_html=True)
+
 energy_banner(daily, per_meal, df=st.session_state["df"])
 
 st.markdown("## Daily Recommendations")

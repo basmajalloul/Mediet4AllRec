@@ -144,6 +144,9 @@ def inject_css_and_title():
         .app-header {
             display: none !important;        
         }
+        .stMain:has(#login-form) button {
+            margin-bottom: 5px !important;
+        }
         @media (max-width: 768px) {
             header+section>div {
                 padding-top: 20px !important;
@@ -201,7 +204,68 @@ def inject_css_and_title():
 
             .st-af > button {
                 width: 25%;
-            }                                 
+            } 
+            h1#welcome-to-mediet4-all {
+                font-size: 28px;
+            } 
+            .st-emotion-cache-4rsbii:has(#login-form) {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                overflow: auto;
+                -webkit-box-align: center;
+                align-items: center;
+                height: 100dvh;
+                flex-wrap: nowrap;
+                align-content: center;
+                justify-content: center;
+            }  
+            .welcome-back {
+                font-size: 22px !important;
+                margin-top: 20px !important;
+            }
+
+            .welcome-back b {
+                font-weight: bold;
+                color: #3c6553;
+            }
+
+            .pill {
+                font-size: 11px !important;
+                padding: 3px 10px !important;
+                border-radius: 999px !important;
+                display: inline !important;
+            }
+            .tile {
+                max-width: calc(100% - 40px);
+                display: flex;
+                flex-wrap: wrap;
+                flex-direction: row;
+            }
+
+            .icon {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
+
+            .body {
+                max-width: calc(100% - 44px) !important;
+            }
+
+            .head {
+                font-size: 15px;
+                line-height: 1.2;
+            }
+
+            .kchip {
+                font-size: 11px !important;
+                padding: 3px 8px !important;
+            }
+
+            .tag {
+                height: 22px;
+            }                                
         }                    
     </style>
     """, unsafe_allow_html=True)

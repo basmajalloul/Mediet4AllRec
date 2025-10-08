@@ -24,6 +24,9 @@ if not user:
 st.session_state["user_id"] = user["id"]       # <- normalize the key
 user_id = st.session_state["user_id"]
 
+user_name = user.get("user_metadata", {}).get("name") or user.get("email", "User")
+st.markdown(f"<h3 class='welcome-back'>👋 Welcome back, <b>{user_name.split('@')[0].title()}</b>!</h3>", unsafe_allow_html=True)
+
 st.session_state["__user_id__"] = user["id"]
 st.session_state.pop(f"__hydrated_log__:{date.today().isoformat()}", None)
 

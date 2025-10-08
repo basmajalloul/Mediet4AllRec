@@ -50,9 +50,7 @@ st.markdown("""
 #root > div:nth-child(1) > div.withScreencast > div > div > div > section > div.stMainBlockContainer.block-container > div {padding: 0px !important; box-shadow: none !important; border: 0px !important;}
 
 @media (max-width: 768px) {
-    header+section>div>div {
-        margin-top: -60px !important;
-    }
+
     .mini-metrics {
         grid-template-columns: 1fr 1fr !important;
         gap: 0px 15px !important;
@@ -74,11 +72,49 @@ st.markdown("""
         margin-bottom: -8px;
         font-size: 13px !important;
     }
+
+    h2#recommended-activities {
+        margin-top: -50px !important;
+        font-size: 25px !important;
+    }
+            
+    h2#activities {
+        margin-top: 0px !important;
+        font-size: 25px !important;
+    }
             
     h2#recommended-activities {
-        margin-bottom: 0px !important;
-        margin-top: 15px;
+        margin-top: -50px;
+        font-size: 25px !important;
     }
+
+    .hchip {
+        margin-top: -20px !important;
+    }
+
+    .stHorizontalBlock div[data-testid="stVerticalBlock"]:has(.qbox-start) {
+        padding-bottom: 30px;
+    }
+
+    .wk-head {
+        margin-top: -30px;
+    }
+    
+    .stRadio p {
+        font-size: 13px;
+        line-height: 26px;
+    }
+
+    .stButton p {
+        font-size: 14px;
+        line-height: 2;
+    }
+            
+    .st-key-wk_log_btn button {
+        padding: 5px !important;
+        width: 120px !important;
+    }
+       
 }
 /* Cardify any Streamlit block/column that CONTAINS our marker element */
 .stHorizontalBlock  div[data-testid="stVerticalBlock"]:has(.qbox-start),
@@ -144,6 +180,9 @@ st.markdown("""
 user = auth_gate()
 user_id = user["id"]
 today = date.today()
+
+user_name = user.get("user_metadata", {}).get("name") or user.get("email", "User")
+st.markdown(f"<h3 class='welcome-back'>👋 Welcome back, <b>{user_name.split('@')[0].title()}</b>!</h3>", unsafe_allow_html=True)
 
 active_name = st.session_state.get("active_profile_name", "default")
 prof = (load_profile(user_id, active_name) or {})
@@ -432,20 +471,24 @@ else:
     # choose how many cards per row
     cols_per_row = 5
     for i, f in enumerate(foods):
-        kind2 = f.get("kind","Other")
-        icon2 = icons2.get(kind, "⚡")
+        
+        meal_kind = f.get("kind", "Other")
+        icon = icons2.get(meal_kind, "⚡")
 
         kcal = int(float(f.get("calories_kcal") or 0))
-        name = f.get("name","Meal")
+        name = f.get("name", "Meal")
         lname = name.lower()
+
+        # default to safe values
+        kind, inten = "Walk", "Moderate"
+
         if any(w in lname for w in ["couscous","pasta","rice","bread"]):
-            kind,inten = "Run","Moderate"
+            kind, inten = "Run", "Moderate"
         elif any(w in lname for w in ["fish","chicken"]):
-            kind,inten = "Walk","Moderate"
+            kind, inten = "Walk", "Moderate"
         elif any(w in lname for w in ["cake","tart","dessert","sweet"]):
-            kind,inten = "Cycle","Moderate"
-        else:
-            kind,inten = "Walk","Moderate"
+            kind, inten = "Cycle", "Moderate"
+
 
         mins = minutes_to_burn(kcal, kind, inten, weight_kg)
 
@@ -453,7 +496,7 @@ else:
             cols = st.columns(cols_per_row, gap="small")
         with cols[i % cols_per_row]:
             if st.button(
-                f"*{icon2}* **{name}**\n\n≈ {kcal} kcal\n\n{kind} ({inten}) · {mins} min",
+                f"*{icon}* **{name}**\n\n≈ {kcal} kcal\n\n{kind} ({inten}) · {mins} min",
                 key=f"log_{f['id']}",
                 use_container_width=True,
                 help="Click to log this activity",
