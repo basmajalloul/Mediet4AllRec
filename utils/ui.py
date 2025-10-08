@@ -301,7 +301,6 @@ def inject_css_and_title():
 
             section[data-testid="stSidebar"] {
                 width: 100vw !important;
-                min-width: calc(100vw - 10px) !important;
                 background: orange;
             }
 
@@ -313,6 +312,10 @@ def inject_css_and_title():
                 background-color: #f9ad1a !important;
                 color: #fff !important;
                 font-weight: 800 !important;
+            }
+                
+            section[data-testid="stSidebar"] button {
+                background: none !important;
             }
                             
         }                    
