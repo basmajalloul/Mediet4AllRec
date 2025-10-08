@@ -318,18 +318,10 @@ def inject_css_and_title():
                 background: none !important;
             }
                 
-            #root > div:nth-child(1) > div > div > div {
-                display: none !important;
-            }
-
             #root > div:nth-child(1) > div > div > a {
                 display: none !important;
             }
-                
-            .stAppToolbar > div > div:nth-child(2) {
-                display: none !important;
-            }
-                            
+                             
         }                    
     </style>
     """, unsafe_allow_html=True)
