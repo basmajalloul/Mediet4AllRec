@@ -159,7 +159,15 @@ st.markdown("""<style>
         .view-switch label[data-checked="true"] {
             background: #ff6600;
             color: white;
-        }</style>""", unsafe_allow_html=True)
+        }
+            
+        @media (max-width: 768px) {
+            header+section {
+                margin-top: 45px;
+            }    
+        }
+            
+        </style>""", unsafe_allow_html=True)
 
 # --- Tabs with persistence ---
 meal_order = ["Breakfast", "Lunch", "Dinner", "Snack"]
