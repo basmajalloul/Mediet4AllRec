@@ -74,17 +74,11 @@ st.markdown("""
     }
 
     h2#recommended-activities {
-        margin-top: -50px !important;
         font-size: 25px !important;
     }
             
     h2#activities {
         margin-top: 0px !important;
-        font-size: 25px !important;
-    }
-            
-    h2#recommended-activities {
-        margin-top: -50px;
         font-size: 25px !important;
     }
 

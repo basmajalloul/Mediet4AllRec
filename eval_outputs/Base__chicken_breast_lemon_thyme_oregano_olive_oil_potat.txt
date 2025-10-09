@@ -1,0 +1,32 @@
+```json
+{
+  "title": "Lemon Thyme Chicken with Roasted Potatoes",
+  "ingredients": [
+    "4 chicken breasts",
+    "2 lemons (juice and zest)",
+    "2 teaspoons dried thyme",
+    "2 teaspoons dried oregano",
+    "4 tablespoons olive oil",
+    "4 medium potatoes, cut into wedges",
+    "1 large onion, sliced",
+    "Salt and pepper to taste"
+  ],
+  "steps": [
+    "Preheat the oven to 400°F (200°C).",
+    "In a bowl, combine the lemon juice, lemon zest, thyme, oregano, olive oil, salt, and pepper.",
+    "Add the chicken breasts to the marinade and coat well. Let it marinate for at least 30 minutes.",
+    "In a large baking dish, arrange the potato wedges and onion slices. Drizzle with olive oil and season with salt and pepper. Toss to coat.",
+    "Place the marinated chicken breasts on top of the potatoes and onions in the baking dish.",
+    "Bake in the preheated oven for 30-35 minutes, or until the chicken is cooked through and the potatoes are golden and tender.",
+    "Remove from the oven and let it rest for a few minutes before serving.",
+    "Serve the chicken with the roasted potatoes and onions, drizzling any remaining juices from the baking dish over the top."
+  ],
+  "nutrition": {
+    "calories": 450,
+    "protein": 30,
+    "fat": 20,
+    "carbohydrates": 40,
+    "fiber": 5
+  }
+}
+```

@@ -1,0 +1,32 @@
+```json
+{
+  "title": "Whole Wheat Pasta with Spinach and Mushrooms",
+  "ingredients": [
+    "200g whole wheat pasta",
+    "200g mushrooms, sliced",
+    "150g fresh spinach",
+    "50g Parmesan cheese, grated",
+    "2 cloves garlic, minced",
+    "3 tablespoons olive oil",
+    "Salt to taste",
+    "Black pepper to taste"
+  ],
+  "steps": [
+    "Bring a large pot of salted water to a boil. Add the whole wheat pasta and cook according to package instructions until al dente. Drain and set aside.",
+    "In a large skillet, heat the olive oil over medium heat. Add the minced garlic and sauté for 1-2 minutes until fragrant.",
+    "Add the sliced mushrooms to the skillet and cook for about 5-7 minutes, or until they are golden brown and tender.",
+    "Add the fresh spinach to the skillet and cook for an additional 2-3 minutes until wilted.",
+    "Combine the cooked pasta with the mushroom and spinach mixture. Toss well to combine, adding salt and black pepper to taste.",
+    "Remove from heat and sprinkle the grated Parmesan cheese over the top. Toss again to distribute the cheese.",
+    "Serve immediately, garnished with additional Parmesan if desired."
+  ],
+  "nutrition": {
+    "calories": 450,
+    "protein": 18g,
+    "carbohydrates": 65g,
+    "fat": 15g,
+    "fiber": 8g,
+    "sugar": 3g
+  }
+}
+```

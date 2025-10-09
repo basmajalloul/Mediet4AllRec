@@ -1,0 +1,17 @@
+prompt,model,legumes_in_input,legumes_mentions_out,legume_bias,cooking_verbs_count,num_ingredients_tokens,num_steps_tokens,cultural_fit_score,raw_file
+"salmon, lemon, olive oil, dill, garlic, arugula, cherry tomatoes",Base,0,0,0,1,8,8,1,eval_outputs\Base__salmon_lemon_olive_oil_dill_garlic_arugula_cherry_.txt
+"salmon, lemon, olive oil, dill, garlic, arugula, cherry tomatoes",MedChefStyle-v1,0,0,0,2,1,4,3,eval_outputs\MedChefStyle-v1__salmon_lemon_olive_oil_dill_garlic_arugula_cherry_.txt
+"eggplant, zucchini, bell pepper, feta cheese, basil, olive oil, tomato",Base,0,0,0,1,1,1,4,eval_outputs\Base__eggplant_zucchini_bell_pepper_feta_cheese_basil_ol.txt
+"eggplant, zucchini, bell pepper, feta cheese, basil, olive oil, tomato",MedChefStyle-v1,0,0,0,1,7,4,2,eval_outputs\MedChefStyle-v1__eggplant_zucchini_bell_pepper_feta_cheese_basil_ol.txt
+"whole wheat pasta, mushrooms, spinach, parmesan, garlic, olive oil",Base,0,0,0,2,1,1,2,eval_outputs\Base__whole_wheat_pasta_mushrooms_spinach_parmesan_garli.txt
+"whole wheat pasta, mushrooms, spinach, parmesan, garlic, olive oil",MedChefStyle-v1,0,0,0,2,6,4,2,eval_outputs\MedChefStyle-v1__whole_wheat_pasta_mushrooms_spinach_parmesan_garli.txt
+"chicken breast, lemon, thyme, oregano, olive oil, potatoes, onion",Base,0,0,0,2,8,8,1,eval_outputs\Base__chicken_breast_lemon_thyme_oregano_olive_oil_potat.txt
+"chicken breast, lemon, thyme, oregano, olive oil, potatoes, onion",MedChefStyle-v1,0,0,0,1,7,5,1,eval_outputs\MedChefStyle-v1__chicken_breast_lemon_thyme_oregano_olive_oil_potat.txt
+"lentils, carrots, cumin, coriander, onion, tomato, parsley",Base,1,2,0,4,10,9,2,eval_outputs\Base__lentils_carrots_cumin_coriander_onion_tomato_parsl.txt
+"lentils, carrots, cumin, coriander, onion, tomato, parsley",MedChefStyle-v1,1,2,0,3,7,5,0,eval_outputs\MedChefStyle-v1__lentils_carrots_cumin_coriander_onion_tomato_parsl.txt
+"bulgur, spinach, mint, cucumber, olive oil, lemon juice",Base,0,0,0,2,1,1,2,eval_outputs\Base__bulgur_spinach_mint_cucumber_olive_oil_lemon_juice.txt
+"bulgur, spinach, mint, cucumber, olive oil, lemon juice",MedChefStyle-v1,0,0,0,1,6,1,1,eval_outputs\MedChefStyle-v1__bulgur_spinach_mint_cucumber_olive_oil_lemon_juice.txt
+"tofu, tomato, basil, olive oil, garlic, zucchini",Base,0,0,0,2,1,1,2,eval_outputs\Base__tofu_tomato_basil_olive_oil_garlic_zucchini.txt
+"tofu, tomato, basil, olive oil, garlic, zucchini",MedChefStyle-v1,0,0,0,1,7,1,1,eval_outputs\MedChefStyle-v1__tofu_tomato_basil_olive_oil_garlic_zucchini.txt
+"eggs, tomato, spinach, feta cheese, olive oil",Base,0,0,0,3,6,10,3,eval_outputs\Base__eggs_tomato_spinach_feta_cheese_olive_oil.txt
+"eggs, tomato, spinach, feta cheese, olive oil",MedChefStyle-v1,0,0,0,1,5,4,3,eval_outputs\MedChefStyle-v1__eggs_tomato_spinach_feta_cheese_olive_oil.txt

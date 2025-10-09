@@ -7,6 +7,9 @@ from meddiet_rules import (
     derive_daily_calorie_target, split_meal_targets,
     recommend, daily_adherence_from_logs,
 )
+from utils.db import activities_for_day, sum_activity_kcal_for_day
+from datetime import date
+
 
 # ------------------ constants ------------------
 ORDERED_MEALS = ["Breakfast", "Lunch", "Dinner", "Snack"]
@@ -119,23 +122,58 @@ def summarize_logged_stats(df_all: pd.DataFrame, logged_ids: List[str]) -> dict:
     return {"totals": totals, "macro_pct": macro_pct}
 
 def build_ai_context(df_all: pd.DataFrame, logged_ids: List[str],
-                     profile: Dict, targets: Dict, adherence: Dict) -> dict:
-    meals=[]
+                     profile: Dict, targets: Dict, adherence: Dict, user_id: str) -> dict:
+    from datetime import date
+    from utils.db import activities_for_day
+
+    # --- meals summary ---
+    meals = []
     for rid in logged_ids:
-        row = df_all[df_all["recipe_id"]==rid].iloc[0].to_dict()
+        row = df_all[df_all["recipe_id"] == rid].iloc[0].to_dict()
         meals.append({
-            "recipe_id": row["recipe_id"], "name": row["name"], "meal_type": row["meal_type"],
-            "kcal": float(row["calories_kcal"]), "protein_g": float(row["protein_g"]),
-            "carbs_g": float(row["carbs_g"]), "fat_g": float(row["fat_g"]),
-            "fiber_g": float(row["fiber_g"]), "sodium_mg": float(row["sodium_mg"]),
-            "tags": str(row.get("med_attributes","")),
+            "recipe_id": row["recipe_id"],
+            "name": row["name"],
+            "meal_type": row["meal_type"],
+            "kcal": float(row["calories_kcal"]),
+            "protein_g": float(row["protein_g"]),
+            "carbs_g": float(row["carbs_g"]),
+            "fat_g": float(row["fat_g"]),
+            "fiber_g": float(row["fiber_g"]),
+            "sodium_mg": float(row["sodium_mg"]),
+            "tags": str(row.get("med_attributes", "")),
         })
+
+    # --- activity summary ---
+    acts = activities_for_day(user_id, date.today())
+    total_activity_kcal = float(sum((a.get("calories") or 0) for a in acts))
+    activity_summary = {
+        "total_kcal_burned": total_activity_kcal,
+        "count": len(acts),
+        "details": [
+            {
+                "kind": a.get("kind"),
+                "intensity": a.get("intensity"),
+                "duration_min": a.get("duration_min"),
+                "steps": a.get("steps"),
+                "calories": a.get("calories"),
+            }
+            for a in acts
+        ],
+    }
+
+    # --- energy balance ---
+    day_stats = summarize_logged_stats(df_all, logged_ids)
+    total_intake = day_stats["totals"].get("calories_kcal", 0)
+    net_energy = total_intake - total_activity_kcal
+
     return {
         "profile": profile,
         "targets": targets,
         "adherence": adherence,
         "logged_meals": meals,
-        "day_stats": summarize_logged_stats(df_all, logged_ids),
+        "day_stats": day_stats,
+        "activity_summary": activity_summary,
+        "net_energy": net_energy,
     }
 
 # simple utility so all pages can get a live snapshot

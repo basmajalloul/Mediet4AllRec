@@ -1,0 +1,33 @@
+```json
+{
+  "title": "Mediterranean Spinach and Feta Frittata",
+  "ingredients": [
+    "4 large eggs",
+    "1 cup fresh spinach, chopped",
+    "1 medium tomato, diced",
+    "1/2 cup feta cheese, crumbled",
+    "2 tablespoons olive oil",
+    "Salt and pepper to taste"
+  ],
+  "steps": [
+    "Preheat your oven to 375°F (190°C).",
+    "In a large skillet, heat the olive oil over medium heat.",
+    "Add the chopped spinach and sauté for 2-3 minutes until wilted.",
+    "Stir in the diced tomato and cook for an additional 2 minutes.",
+    "In a bowl, whisk together the eggs, salt, and pepper.",
+    "Pour the egg mixture into the skillet over the spinach and tomato.",
+    "Sprinkle the crumbled feta cheese evenly on top.",
+    "Cook on the stove for about 5 minutes until the edges start to set.",
+    "Transfer the skillet to the preheated oven and bake for 10-12 minutes, or until the frittata is fully set and lightly golden on top.",
+    "Remove from the oven, let cool slightly, then slice and serve warm."
+  ],
+  "nutrition": {
+    "servings": 2,
+    "calories": 320,
+    "protein": "20g",
+    "fat": "24g",
+    "carbohydrates": "6g",
+    "fiber": "1g"
+  }
+}
+```

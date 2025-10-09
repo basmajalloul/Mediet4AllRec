@@ -1,0 +1,22 @@
+{
+	"title": "Spanakopita Omelette",
+	"ingredients": [
+		"Eggs",
+		"Tomato",
+		"Spinach",
+		"Feta cheese",
+		"Olive oil"
+	],
+	"steps": [
+		"Step 1: Beat eggs with crumbled feta.",
+		"Step 2: Sauté spinach with tomato in olive oil.",
+		"Step 3: Pour egg mixture over spinach, cook until set.",
+		"Step 4: Fold omelette, serve hot."
+	],
+	"nutrition": {
+		"calories": "215 kcal",
+		"carbs": "3.9 g",
+		"fat": "16.3 g",
+		"protein": "13.5 g"
+	}
+}

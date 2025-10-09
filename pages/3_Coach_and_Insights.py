@@ -9,6 +9,8 @@ from utils.db import load_profile, load_day_log
 from meddiet_rules import derive_daily_calorie_target, split_meal_targets, daily_adherence_from_logs
 from datetime import date
 import pandas as pd
+import markdown
+
 
 inject_css_and_title()
 topbar_logo_and_title()
@@ -74,10 +76,16 @@ saved = load_profile(user_id, active_name)         # {} if none
 prof  = _normalize(saved)
 
 profile = {
-    "age": int(prof["age"]), "sex": prof["sex"],
-    "height_cm": int(prof["height_cm"]), "weight_kg": float(prof["weight_kg"]),
-    "activity": prof["activity"], "goal": prof["goal"],
+    "age": int(prof["age"]),
+    "sex": prof["sex"],
+    "height_cm": int(prof["height_cm"]),
+    "weight_kg": float(prof["weight_kg"]),
+    "activity": prof["activity"],
+    "goal": prof["goal"],
+    "conditions": prof.get("conditions", {}),
+    "diet_style": prof.get("diet_style", {}),
 }
+
 pattern = prof.get("pattern", "3_meals_1_snack")
 daily   = derive_daily_calorie_target(profile["age"], profile["weight_kg"], profile["height_cm"],
                                       profile["sex"], profile["activity"], profile["goal"])
@@ -118,17 +126,39 @@ def coach_prompt(context: dict, language: str) -> str:
         "العربية": "اكتب بالعربية بلغة بسيطة وواضحة.",
         "Français": "Écris en français clair et simple.",
     }[language]
+
+    acts = context.get("activity_summary", {})
+    if acts and acts.get("count", 0) > 0:
+        details = acts.get("details", [])
+        activity_text = "Today's activities:\n" + "\n".join(
+            f"- {a.get('kind','?')} ({a.get('intensity','')}, {a.get('duration_min','?')} min, {a.get('calories','?')} kcal)"
+            for a in details
+        ) + f"\nTotal burned: {acts.get('total_kcal_burned', 0):.0f} kcal."
+    else:
+        activity_text = "No activities logged today."
+
+    net_energy = context.get("net_energy", 0)
+    health_flags = [k for k, v in context["profile"].get("conditions", {}).items() if v]
+    health_text = ", ".join(health_flags) if health_flags else "none"
+
+    enriched_context = {
+        **context,
+        "activity_text": activity_text,
+        "net_energy": net_energy,
+        "health_conditions": health_text,
+    }
+
     return f"""{loc}
 
 DATA (JSON):
-{json.dumps(context, ensure_ascii=False)}
+{json.dumps(enriched_context, ensure_ascii=False)}
 
 TASKS:
-1) One-sentence overview vs targets.
-2) Explain WHY the scores (kcal, macro %, fiber, sodium).
-3) Health check: only conditions that apply.
-4) Suggestions: up to 3 swaps/additions from Mediterranean staples; keep constraints and kcal limits.
-Format as short bullets."""
+1) Give a short overview of energy and activity balance vs targets.
+2) Explain WHY the scores (calories, macros, fiber, sodium, and activity kcal).
+3) Health check: consider these conditions → {health_text}. Highlight specific dietary advice for them (e.g., lower sodium for hypertension, avoid saturated fats for hyperlipidemia, anti-inflammatory foods for autoimmune).
+4) Suggestions: up to 3 concrete swaps/additions respecting kcal ±15% and diet style.
+Format as concise bullet points."""
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
     
@@ -154,11 +184,13 @@ with colB:
     update_clicked = st.button("🔄 Update with changes", use_container_width=True)
 
 if run_clicked or update_clicked:
+    user_id = st.session_state.get("__user_id__") or st.session_state.get("user_id")
     ctx = build_ai_context(
         snap["df"], snap["logged"],
         profile,
         {"daily_kcal": daily, "per_meal_kcal": per_meal},
-        snap["adh"]
+        snap["adh"],
+        user_id
     )
     out = call_llm(AI_SYSTEM_PROMPT, coach_prompt(ctx, st.session_state.get("ai_language","English")))
     st.session_state["__coach_out__"] = out
@@ -166,7 +198,9 @@ if run_clicked or update_clicked:
     st.rerun()
 
 if st.session_state.get("__coach_out__"):
-    st.markdown(f"<div class='coach-output'>{st.session_state['__coach_out__']}</div>", unsafe_allow_html=True)
+    raw_md = st.session_state["__coach_out__"]
+    rendered_html = markdown.markdown(raw_md, extensions=["fenced_code", "tables"])
+    st.markdown(f"<div class='coach-output'>{rendered_html}</div>", unsafe_allow_html=True)
 
 with st.expander("Debug: AI Context (optional)"):
     st.code(json.dumps(st.session_state.get("__coach_ctx__", {}), indent=2, ensure_ascii=False), language="json")

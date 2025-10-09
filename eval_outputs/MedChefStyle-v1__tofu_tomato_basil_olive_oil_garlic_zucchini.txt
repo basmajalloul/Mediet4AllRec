@@ -1,0 +1,21 @@
+{
+	"title": "Zaalouk",
+	"ingredients": [
+		"Aubergine",
+		"Tomato",
+		"Olive oil",
+		"Garlic",
+		"Paprika",
+		"Cumin",
+		"Coriander"
+	],
+	"steps": [
+		"Step 1: Roast aubergine, peel and chop. Step 2: Cook tomatoes with olive oil and garlic. Step 3: Mix aubergine with tomato, add paprika, cumin, coriander. Step 4: Cook until thick. Step 5: Serve warm or cold with bread."
+	],
+	"nutrition": {
+		"calories": "53 kcal",
+		"protein": "1.5 g",
+		"fat": "3.4 g",
+		"carbs": "4.8 g"
+	}
+}

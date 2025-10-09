@@ -1,0 +1,34 @@
+```json
+{
+  "title": "Mediterranean Ratatouille with Feta",
+  "ingredients": [
+    "1 medium eggplant, diced",
+    "2 medium zucchini, sliced",
+    "1 bell pepper, diced",
+    "2 medium tomatoes, chopped",
+    "100g feta cheese, crumbled",
+    "1/4 cup fresh basil leaves, chopped",
+    "3 tablespoons olive oil",
+    "Salt and pepper to taste"
+  ],
+  "steps": [
+    "Preheat the oven to 200°C (400°F).",
+    "In a large bowl, combine the diced eggplant, sliced zucchini, diced bell pepper, and chopped tomatoes.",
+    "Drizzle the olive oil over the vegetables and season with salt and pepper. Toss to coat evenly.",
+    "Spread the vegetable mixture evenly in a baking dish.",
+    "Bake in the preheated oven for 30-35 minutes, or until the vegetables are tender and slightly caramelized.",
+    "Remove the dish from the oven and sprinkle the crumbled feta cheese and chopped basil on top.",
+    "Return to the oven for an additional 5 minutes to warm the feta.",
+    "Serve warm, garnished with extra basil if desired."
+  ],
+  "nutrition": {
+    "serving_size": "1 serving",
+    "calories": 180,
+    "protein": 6g,
+    "fat": 12g,
+    "carbohydrates": 14g,
+    "fiber": 4g,
+    "sugar": 4g
+  }
+}
+```

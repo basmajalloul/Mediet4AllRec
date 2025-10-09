@@ -1,0 +1,25 @@
+{
+    "title": "Adas Bi Hamod",
+    "ingredients": [
+        "Lentils",
+        "Carrots",
+        "Cumin",
+        "Coriander",
+        "Onion",
+        "Tomato",
+        "Parsley"
+    ],
+    "steps": [
+        "Step 1: Chop onion, carrot, tomato and parsley.",
+        "Step 2: Sauté onion, add cumin and coriander.",
+        "Step 3: Add lentils and water, simmer until nearly tender.",
+        "Step 4: Add chopped carrot and tomato, simmer until all tender.",
+        "Step 5: Season with salt and pepper, stir in parsley before serving."
+    ],
+    "nutrition": {
+        "calories": "104 kcal",
+        "protein": "5.1 g",
+        "fat": "0.4 g",
+        "carbs": "21.6 g"
+    }
+}

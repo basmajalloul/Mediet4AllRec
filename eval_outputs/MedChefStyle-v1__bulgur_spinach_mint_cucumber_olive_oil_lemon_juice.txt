@@ -1,0 +1,20 @@
+{
+	"title": "Kısır",
+	"ingredients": [
+		"Bulgur",
+		"Spinach",
+		"Mint",
+		"Cucumber",
+		"Olive oil",
+		"Lemon juice"
+	],
+	"steps": [
+		"Step 1: Cook bulgur, cool. Step 2: Chop spinach, mint, cucumber. Step 3: Mix with bulgur. Step 4: Dress with olive oil, lemon juice. Step 5: Stir well and serve."
+	],
+	"nutrition": {
+		"Calories": "116 kcal",
+		"Protein": "2.5 g",
+		"Carbs": "21.5 g",
+		"Fat": "3.5 g"
+	}
+}

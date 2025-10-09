@@ -3,7 +3,8 @@ import json, os
 import streamlit as st
 
 def _model_name():
-    return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    #return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    return os.getenv("OPENAI_MODEL", "ft:gpt-3.5-turbo-0125:personal:medchefstyle-v1:COkL6OPV")
 
 def call_llm(messages, temperature=0.6, max_tokens=900):
     """Minimal OpenAI Chat Completions wrapper. Expects OPENAI_API_KEY in env.

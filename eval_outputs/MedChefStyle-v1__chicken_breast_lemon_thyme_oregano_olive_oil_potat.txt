@@ -1,0 +1,25 @@
+{
+	"title": "Kotopoulo me Patates",
+	"ingredients": [
+		"Chicken Breast",
+		"Lemon",
+		"Thyme",
+		"Oregano",
+		"Olive Oil",
+		"Potatoes",
+		"Onion"
+	],
+	"steps": [
+		"Step 1: Marinate chicken in lemon, thyme, oregano, olive oil.",
+		"Step 2: Slice potatoes & onion, toss with olive oil, oregano.",
+		"Step 3: Arrange chicken, potatoes & onion in baking dish.",
+		"Step 4: Add lemon slices, drizzle with marinade.",
+		"Step 5: Bake at 200°C until chicken is cooked & potatoes tender."
+	],
+	"nutrition": {
+		"calories": "168 kcal",
+		"carbohydrates": "13.8 g",
+		"fat": "7.7 g",
+		"protein": "11.7 g"
+	}
+}

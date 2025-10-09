@@ -1,0 +1,23 @@
+{
+	"title": "Parmigiano e Spinaci Maccheroni",
+	"ingredients": [
+		"Whole wheat pasta",
+		"Mushrooms",
+		"Spinach",
+		"Pecorino",
+		"Garlic",
+		"Olive oil"
+	],
+	"steps": [
+		"Cook pasta al dente. Sauté mushrooms, garlic in oil.",
+		"Add spinach, cook until wilted. Toss with pasta.",
+		"Stir in pecorino, season with salt, pepper.",
+		"Finish with extra cheese and drizzle of oil."
+	],
+	"nutrition": {
+		"calories": "365 kcal",
+		"carbs": "43 g",
+		"fat": "13 g",
+		"protein": "19 g"
+	}
+}

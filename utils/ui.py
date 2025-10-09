@@ -45,7 +45,15 @@ def inject_css_and_title():
       .pill{background:#f4f6fb;color:#333;padding:3px 10px;border-radius:999px;font-size:.7rem;margin-right:6px;text-transform: uppercase;}
       .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#e8f3ea;color:#1c6b2a;font-weight:700;font-size:.80rem}
       .divider{height:1px;background:#eef2f7;margin:12px 0}
-      .coach-output{padding:16px 20px;border-radius:12px;background:#fafbfc;border-left:4px solid #5ca0f2;font-size:.97rem;line-height:1.55;color:#2a323f;margin-top:12px}
+      .coach-output{
+        padding: 16px 20px;
+        border-radius: 5px;
+        background: #f6f7f7;
+        font-size: .97rem;
+        line-height: 1.55;
+        color: #2a323f;
+        margin-top: 12px;        
+        }
       h1#meddiet{font-weight:900;text-transform:uppercase;font-size:30px;color:#f9ad1a;margin-top:5px}
       .title { font-weight: 700; font-size: 1.05rem; margin: 2px 0 4px; }
       .sub { color:#5b667a; font-size:0.95rem; margin-bottom:12px; }
@@ -357,7 +365,13 @@ def inject_css_and_title():
                 font-weight: bold;
                 font-size: 29px;
             }
-
+                
+            h3#energy-and-activity-overview ,
+            h3#score-explanation,
+            h3#health-check-autoimmune,
+            h3#suggestions-for-improvement {
+                font-size: 20px;
+            }    
                              
         }                    
     </style>

@@ -47,6 +47,12 @@ st.markdown("""
 .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
 .actions .stButton>button{border-radius:10px;padding:12px 18px;font-weight:700}
 h2#mediet-ai-recipe-composer {margin-bottom: 0px !important;}
+@media (max-width: 768px) {
+    h2#med-chef-recipe-composer {
+        margin-bottom: 0px !important;
+        margin-top: 20px;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -95,7 +101,7 @@ st.session_state["score_today"] = len(st.session_state["logged"])
 energy_banner(daily, per_meal, df=st.session_state["df"])
 
 #st.title("🧑Recipe Composer (MedDiet + AI)")
-st.markdown("## MedietAI Recipe Composer")
+st.markdown("## MedChef Recipe Composer")
 st.caption("Compose coherent recipes that respect your profile, pantry, and MedDiet rules. I’ll auto‑critique and fix obvious issues.")
 
 # --- sidebar / inputs ---

@@ -1,0 +1,29 @@
+{
+  "title": "Mediterranean Tofu with Zucchini and Tomato",
+  "ingredients": [
+    "200g firm tofu, cubed",
+    "2 medium tomatoes, diced",
+    "1 medium zucchini, sliced",
+    "2 tablespoons fresh basil, chopped",
+    "3 tablespoons olive oil",
+    "2 cloves garlic, minced",
+    "Salt, to taste",
+    "Black pepper, to taste"
+  ],
+  "steps": [
+    "Heat 2 tablespoons of olive oil in a large skillet over medium heat.",
+    "Add the minced garlic and sauté for about 1 minute until fragrant, being careful not to burn it.",
+    "Add the cubed tofu to the skillet and cook for about 5-7 minutes, turning occasionally, until golden brown on all sides.",
+    "Stir in the diced tomatoes and sliced zucchini, cooking for an additional 5-7 minutes until the vegetables are tender.",
+    "Season with salt and black pepper to taste.",
+    "Remove from heat and stir in the fresh basil just before serving.",
+    "Drizzle with the remaining tablespoon of olive oil for added richness and serve warm."
+  ],
+  "nutrition": {
+    "calories": 320,
+    "protein": 18g,
+    "carbohydrates": 15g,
+    "fat": 24g,
+    "fiber": 4g
+  }
+}

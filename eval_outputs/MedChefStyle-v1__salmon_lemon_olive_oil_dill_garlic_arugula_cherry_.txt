@@ -1,0 +1,24 @@
+{
+"title": "Salmon Souvlaki with Lemon-Dill Marinade",
+"ingredients": [
+"Salmon (cubed)",
+"Lemon (juice & zest)",
+"Olive oil",
+"Dill",
+"Garlic",
+"Arugula",
+"Cherry tomatoes",
+"Pita (whole grain)",
+],
+"steps": [
+"Step 1: Combine lemon juice, zest, olive oil, dill and garlic. Marinate salmon 30 min.",
+"Step 2: Thread salmon onto skewers. Grill or bake until cooked.",
+"Step 3: Serve in pita with arugula, tomatoes and tzatziki.",
+],
+"nutrition": {
+"calories": "320 kcal",
+"protein": "28 g",
+"carbs": "20 g",
+"fat": "14 g"
+}
+}

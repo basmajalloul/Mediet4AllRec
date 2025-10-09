@@ -1,0 +1,30 @@
+{
+  "title": "Bulgur Salad with Spinach, Mint, and Cucumber",
+  "ingredients": [
+    "1 cup bulgur",
+    "2 cups water",
+    "2 cups fresh spinach, chopped",
+    "1/2 cup fresh mint, chopped",
+    "1 cucumber, diced",
+    "3 tablespoons olive oil",
+    "2 tablespoons lemon juice",
+    "Salt and pepper to taste"
+  ],
+  "steps": [
+    "In a saucepan, bring 2 cups of water to a boil. Add the bulgur, reduce heat, cover, and simmer for about 12-15 minutes, or until the bulgur is tender and the water is absorbed.",
+    "Once cooked, remove the bulgur from heat and let it cool to room temperature.",
+    "In a large bowl, combine the chopped spinach, mint, and diced cucumber.",
+    "Add the cooled bulgur to the bowl with the vegetables and herbs.",
+    "In a small bowl, whisk together the olive oil, lemon juice, salt, and pepper.",
+    "Drizzle the dressing over the bulgur salad and toss gently to combine.",
+    "Serve chilled or at room temperature."
+  ],
+  "nutrition": {
+    "calories": 250,
+    "protein": 8g,
+    "fat": 10g,
+    "carbohydrates": 36g,
+    "fiber": 5g,
+    "sugar": 2g
+  }
+}

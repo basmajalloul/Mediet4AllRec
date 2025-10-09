@@ -1,0 +1,26 @@
+{
+	"title": "Briam (Greek Baked Vegetables)",
+	"ingredients": [
+		"Eggplant",
+		"Zucchini",
+		"Bell pepper",
+		"Feta cheese",
+		"Basil",
+		"Olive oil",
+		"Tomato"
+	],
+	"steps": [
+		"Step 1: Preheat oven to 200°C. Slice vegetables thinly.",
+		"Step 2: Layer eggplant, zucchini, bell pepper in baking dish. Top with feta and basil.",
+		"Step 3: Drizzle with olive oil, season with salt and pepper. Add tomato slices on top.",
+		"Step 4: Cover with foil and bake 45 mins. Uncover, bake 30 mins more until golden and tender."
+	],
+	"nutrition": {
+		"calories": "113 kcal",
+		"carbohydrates": "9 g",
+		"fat": "7 g",
+		"protein": "4 g",
+		"cholesterol": "13 mg",
+		"sodium": "133 mg"
+	}
+}
