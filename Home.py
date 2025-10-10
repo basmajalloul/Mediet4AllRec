@@ -74,7 +74,19 @@ st.markdown("""
 .pill {
     font-size: 11px;
 }
-@media (max-width:780px){ .statgrid{grid-template-columns:1fr} }
+@media (max-width:780px){ 
+    .statgrid{grid-template-columns:1fr} 
+    .meals-tiles .tile {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    .qa-card {
+        padding: 10px;
+    }
+    .stat-card {
+        padding: 15px 10px 30px !important;
+    }
+}
 
 .statbox{display:flex;flex-direction:column;gap:6px;padding:6px 8px;border-radius:12px}
 .s-head{font-weight:800;color:#0f172a;margin-bottom:0}
