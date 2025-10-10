@@ -110,7 +110,7 @@ st.markdown("""
     }
             
     h2#recommended-activities {
-        margin-top: -30px !important;
+        margin-top: 0px !important;
         padding-top: 0px !important;
     } 
 

@@ -76,10 +76,7 @@ st.markdown("""
 }
 @media (max-width:780px){ 
     .statgrid{grid-template-columns:1fr} 
-    .meals-tiles .tile {
-        max-width: 100% !important;
-        width: 100% !important;
-    }
+
     .qa-card {
         padding: 10px;
     }

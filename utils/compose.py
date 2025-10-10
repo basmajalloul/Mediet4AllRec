@@ -45,8 +45,11 @@ def build_system_prompt():
         "such as stew/tagine, pasta, wrap, tray bake/sheet-pan, skewers, stuffed vegetables, frittata/omelette, soup. "
         "LEGUME RULE: if legumes appear they MUST be cooked (canned or pre-cooked). NEVER raw. "
         "Include a step to 'rinse and drain canned legumes' or 'cook until tender' with an indicative time. "
-        "If grains are used (rice, quinoa, pasta), include the cooking step and time."
+        "If grains are used (rice, quinoa, pasta), include the cooking step and time. "
+        "**When appropriate, use authentic Mediterranean dish names (e.g., Briam, Kısır, Adas Bi Hamod, Kotopoulo me Patates) "
+        "to reflect regional diversity, but always keep the recipe instructions clear and comprehensible in English.**"
     )
+
 
 def build_user_prompt(meal, kcal_target, diet_prefs, health, pantry, servings, strict_pantry):
     prefs = []
