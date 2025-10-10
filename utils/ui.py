@@ -824,8 +824,8 @@ def meal_block_html(meal: str, rows: List[dict], logged_kcal: int, target_kcal: 
     """
     script = """
     <script>
-      function rm(id){const u=new URL(window.parent.location);u.searchParams.set('rm',id);window.parent.location=u}
-      function clearMeal(meal){const u=new URL(window.parent.location);u.searchParams.set('rm_all',meal);window.parent.location=u}
+      function rm(id){window.parent.postMessage({type:'removeMeal', rid:id}, '*');}
+      function clearMeal(meal){window.parent.postMessage({type:'clearMeal', meal:meal}, '*');}
     </script>"""
     return f"<!doctype html><html><head><meta charset='utf-8'>{style}</head><body><div class='wrap'><div class='mealbox'>{header}{rows_html}</div></div>{script}</body></html>"
 

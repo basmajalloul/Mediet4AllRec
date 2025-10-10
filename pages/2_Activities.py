@@ -108,6 +108,43 @@ st.markdown("""
         padding: 5px !important;
         width: 120px !important;
     }
+            
+    h2#recommended-activities {
+        margin-top: -30px !important;
+        padding-top: 0px !important;
+    } 
+
+    .st-key-btn_steps button[kind="secondary"] {
+        background: linear-gradient(90deg, #f9ad1a, #ee6a04);
+        width: 100%;
+        display: block;
+        color: #fff;
+        font-weight: bold !important;
+        border: 0;
+    }
+
+    .st-key-btn_steps {
+        width: 100%;
+    }
+
+    .st-key-btn_steps button[kind="secondary"] div p {
+        font-weight: bold !important;
+    }
+
+    .st-key-start_reset_acts {
+        width: 100% !important;
+    }
+
+    .st-key-start_reset_acts button {
+        background: linear-gradient(45deg, #dd1a1a, #af0606);
+        color: #fff !important;
+        font-weight: bold !important;
+        margin-top: 10px;
+    }
+
+    .st-key-start_reset_acts button p {
+        font-weight: bold;
+    }      
        
 }
 /* Cardify any Streamlit block/column that CONTAINS our marker element */

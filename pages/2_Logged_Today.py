@@ -46,6 +46,27 @@ def hydrate_logged_from_db():
 
 hydrate_logged_from_db()
 
+import streamlit.components.v1 as components
+from streamlit.runtime.scriptrunner import add_script_run_ctx
+
+components.html("""
+<script>
+window.addEventListener("message", (e) => {
+  const d = e.data || {};
+  if(d.type === "removeMeal") {
+    const u = new URL(window.location);
+    u.searchParams.set("rm", d.rid);
+    window.location = u;
+  }
+  if(d.type === "clearMeal") {
+    const u = new URL(window.location);
+    u.searchParams.set("rm_all", d.meal);
+    window.location = u;
+  }
+});
+</script>
+""", height=0)
+
 # hydrate from DB (cache per session/day)
 key = f"__hydrated_log__:{today.isoformat()}"
 if not st.session_state.get(key):
