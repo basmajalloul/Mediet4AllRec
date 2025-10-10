@@ -6,7 +6,8 @@ from utils.ui import inject_css_and_title, topbar_logo_and_title
 from datetime import date
 from utils.ui import energy_banner
 from meddiet_rules import derive_daily_calorie_target, split_meal_targets
-from utils.db import load_profile, load_day_log
+from utils.db import load_profile, load_day_log, get_client
+import json
 
 import pandas as pd
 
@@ -90,6 +91,26 @@ st.caption("MEDLIFE (Mediterranean lifestyle) and IPAQ (physical activity)")
 
 tabs = st.tabs(["MEDLIFE Index", "IPAQ-Short Form"])
 
+supa = get_client()
+today = date.today()
+
+# --- Load existing answers for today (if any) ---
+res = supa.table("questionnaires").select("*").eq("user_id", user_id).eq("day", str(today)).execute()
+saved_q = res.data[0] if res.data else {}
+
+# Decode JSONB if needed
+for field in ("medlife_answers", "ipaq_input"):
+    if isinstance(saved_q.get(field), str):
+        try:
+            saved_q[field] = json.loads(saved_q[field])
+        except Exception:
+            pass
+
+# Push into session state so UI defaults to stored values
+if saved_q:
+    st.session_state["medlife_answers"] = saved_q.get("medlife_answers", [])
+    st.session_state["ipaq_input"] = saved_q.get("ipaq_input", {})
+
 # -------- MEDLIFE --------
 with tabs[0]:
     st.subheader("MEDLIFE Index")
@@ -98,7 +119,8 @@ with tabs[0]:
     cols = st.columns(2)
     for i, (label, _) in enumerate(MEDLIFE_ITEMS):
         with cols[i % 2]:
-            yes_no.append(st.toggle(f"{i+1}. {label}", value=False))
+            prev = st.session_state.get("medlife_answers", [])
+            yes_no.append(st.toggle(f"{i+1}. {label}", value=(prev[i] if i < len(prev) else False)))
     res = medlife_score(yes_no)
     st.markdown("---")
     c1, c2 = st.columns(2)
@@ -112,31 +134,55 @@ with tabs[0]:
 with tabs[1]:
     st.subheader("IPAQ-Short Form (last 7 days)")
     st.caption("Enter days/week and minutes/day. Report sitting time separately.")
-    older = st.checkbox("Use older-adult MET factors (2.5 / 3.0 / 5.3)?", value=False)
 
-    def block(title):
+    # Get any previously saved input from session state (loaded earlier from DB)
+    prev_ipaq = st.session_state.get("ipaq_input", {}) or {}
+
+    older = st.checkbox(
+        "Use older-adult MET factors (2.5 / 3.0 / 5.3)?",
+        value=prev_ipaq.get("use_older_adult_coeffs", False),
+    )
+
+    def block(title, key_prefix):
         st.markdown(f"**{title}**")
         d, m = st.columns(2)
-        days = d.number_input("Days/week", 0, 7, 0, key=f"{title}_d")
-        mins = m.number_input("Minutes/day", 0, 1440, 0, key=f"{title}_m")
+        days = d.number_input(
+            "Days/week", 0, 7,
+            prev_ipaq.get(f"{key_prefix}_days", 0),
+            key=f"{title}_d"
+        )
+        mins = m.number_input(
+            "Minutes/day", 0, 1440,
+            prev_ipaq.get(f"{key_prefix}_min", 0),
+            key=f"{title}_m"
+        )
         return days, mins
 
-    vig_d, vig_m = block("Vigorous activity")
-    mod_d, mod_m = block("Moderate activity")
-    walk_d, walk_m = block("Walking (≥10 min)")
+    # Hydrated number inputs
+    vig_d, vig_m = block("Vigorous activity", "vig")
+    mod_d, mod_m = block("Moderate activity", "mod")
+    walk_d, walk_m = block("Walking (≥10 min)", "walk")
 
     st.markdown("**Sitting (weekday)**")
     sit_h, sit_m = st.columns(2)
-    sit_hours = sit_h.number_input("Hours/day", 0, 24, 0)
-    sit_mins  = sit_m.number_input("Minutes/day", 0, 59, 0)
+    sit_hours = sit_h.number_input(
+        "Hours/day", 0, 24,
+        prev_ipaq.get("sit_hours", 0)
+    )
+    sit_mins = sit_m.number_input(
+        "Minutes/day", 0, 59,
+        prev_ipaq.get("sit_mins", 0)
+    )
 
+    # Build IPAQ input as usual
     ip = IpaqInput(
         walk_days=walk_d, walk_min_per_day=walk_m,
         mod_days=mod_d,  mod_min_per_day=mod_m,
         vig_days=vig_d,  vig_min_per_day=vig_m,
         sit_hours_per_day=sit_hours, sit_min_per_day=sit_mins,
-        use_older_adult_coeffs=older
+        use_older_adult_coeffs=older,
     )
+
     out = ipaq_score(ip)
 
     st.markdown("---")
