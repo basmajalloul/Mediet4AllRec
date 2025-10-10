@@ -7,6 +7,7 @@ from utils.state import ORDERED_MEALS
 from utils.db import append_logged_meal
 from datetime import date
 from utils.db import append_logged_meal, sum_activity_kcal_for_day
+import time
 
 # ---------------- CSS once ----------------
 def inject_css_and_title():
@@ -824,9 +825,14 @@ def meal_block_html(meal: str, rows: List[dict], logged_kcal: int, target_kcal: 
     """
     script = """
     <script>
-      function rm(id){window.parent.postMessage({type:'removeMeal', rid:id}, '*');}
-      function clearMeal(meal){window.parent.postMessage({type:'clearMeal', meal:meal}, '*');}
-    </script>"""
+        function rm(id){
+        window.parent.postMessage({type:'removeMeal', rid:id}, '*');
+        }
+        function clearMeal(meal){
+        window.parent.postMessage({type:'clearMeal', meal:meal}, '*');
+        }
+        </script>
+    """
     return f"<!doctype html><html><head><meta charset='utf-8'>{style}</head><body><div class='wrap'><div class='mealbox'>{header}{rows_html}</div></div>{script}</body></html>"
 
 def logged_section(rows: List[dict], per_meal_target: dict):

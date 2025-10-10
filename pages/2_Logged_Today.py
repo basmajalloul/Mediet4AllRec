@@ -53,19 +53,21 @@ components.html("""
 <script>
 window.addEventListener("message", (e) => {
   const d = e.data || {};
-  if(d.type === "removeMeal") {
+  if(d.type === "removeMeal" || d.type === "clearMeal") {
     const u = new URL(window.location);
-    u.searchParams.set("rm", d.rid);
-    window.location = u;
-  }
-  if(d.type === "clearMeal") {
-    const u = new URL(window.location);
-    u.searchParams.set("rm_all", d.meal);
-    window.location = u;
+    if(d.type === "removeMeal"){ u.searchParams.set("rm", d.rid); }
+    if(d.type === "clearMeal"){ u.searchParams.set("rm_all", d.meal); }
+    window.location = u;  // safe within same sandboxed origin
   }
 });
 </script>
 """, height=0)
+
+if "rm" in st.query_params:
+    remove_log_by_recipe(user_id, today, str(st.query_params["rm"]))
+    del st.query_params["rm"]
+    st.session_state.pop("meal_key", None)  # 🔹 force rebuild of component
+    st.rerun()
 
 # hydrate from DB (cache per session/day)
 key = f"__hydrated_log__:{today.isoformat()}"

@@ -8,7 +8,7 @@ from datetime import date
 from utils.ui import energy_banner, render_recipe_card_compact
 from meddiet_rules import derive_daily_calorie_target, split_meal_targets
 from utils.db import load_profile, load_day_log
-
+import time 
 import pandas as pd
 
 today = date.today()
@@ -247,17 +247,17 @@ for i, (tab, meal) in enumerate(zip(tabs, meal_order)):
                                     .stTabs [role="tabpanel"] button {
                                             margin-bottom: 0px !important;
                                         }
-                                    .title {
+                                    .stTabs [role="tabpanel"] .title {
                                         font-size: 0.9rem;
                                         height: 50px;
                                     }
-                                    .pill {
+                                    .stTabs [role="tabpanel"] .pill {
                                         font-size: 11px;
                                     }
-                                    .pills {
+                                    .stTabs [role="tabpanel"] .pills {
                                         height: 50px;
                                     }
-                                    span.badge {
+                                    .stTabs [role="tabpanel"] span.badge {
                                         margin-bottom: -35px;
                                         display: block;
                                         width: fit-content;
@@ -265,28 +265,27 @@ for i, (tab, meal) in enumerate(zip(tabs, meal_order)):
                                         font-size: 12px;
                                         margin-top: -18px;
                                     }
-                                    .stTabs [role="tabpanel"] button p {
+                                    .stTabs [role="tabpanel"] .stTabs [role="tabpanel"] button p {
                                         font-size: 13px;
                                     }
 
-                                    .stTabs [role="tabpanel"] button {
+                                    .stTabs [role="tabpanel"] .stTabs [role="tabpanel"] button {
                                         min-height: 2rem;
                                     }
 
-                                    .sub {
+                                    .stTabs [role="tabpanel"] .sub {
                                         font-size: 12px;
                                     }
 
-                                    p {
+                                    .stTabs [role="tabpanel"] p {
                                         margin: 0px !important;
                                     }
 
-                                    a.link {
+                                    .stTabs [role="tabpanel"] a.link {
                                         margin-top: 20px;
                                     }
                                     </style>""", unsafe_allow_html=True)                        
                         render_recipe_card_compact(rr, kcal_target=target_kcal, diet_prefs=diet_prefs, health=health, log_key_prefix=meal.lower())
-
 
         # show "Load more" if we haven't reached the end
         if k_val < len(pool):
