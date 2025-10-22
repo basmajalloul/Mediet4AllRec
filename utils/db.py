@@ -7,11 +7,13 @@ import streamlit as st
 from supabase import create_client, Client
 
 # -------- client --------
-@st.cache_resource
 def get_client() -> Client:
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_ANON_KEY"]
-    return create_client(url, key)
+    """Return a new Supabase client tied to the current Streamlit session."""
+    if "__supabase_client__" not in st.session_state:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_ANON_KEY"]
+        st.session_state["__supabase_client__"] = create_client(url, key)
+    return st.session_state["__supabase_client__"]
 
 # -------- auth (used by auth_gate) --------
 def sign_up_password(email: str, password: str) -> Dict[str, Any]:
