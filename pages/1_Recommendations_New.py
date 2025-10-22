@@ -85,6 +85,7 @@ if "__selected_recipe__" not in st.session_state:
     .stVerticalBlock > .stElementContainer {
         width: 100%;
     }
+
     </style>
     """, unsafe_allow_html=True)
 
@@ -99,14 +100,22 @@ if "__selected_recipe__" not in st.session_state:
 # SCREEN 2: DETAIL VIEW
 # ---------------------------
 else:
+    # Force scroll to top when a new recipe is selected
+    st.markdown("""
+        <script>
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        </script>
+    """, unsafe_allow_html=True)
+
     r = st.session_state["__selected_recipe__"]
+
     # st.markdown("### ← [Back to list](#)", unsafe_allow_html=True)
     # st.markdown(
     #     "<script>document.querySelector('a[href=\"#\"]').addEventListener('click', ()=>{parent.postMessage({isBack:true},'*');});</script>",
     #     unsafe_allow_html=True
     # )
 
-    if st.button("← Back", use_container_width=True, type="secondary"):
+    if st.button("← Back", width="stretch", type="secondary"):
         go_back()
 
     st.image(r["image_url"], use_container_width=True)

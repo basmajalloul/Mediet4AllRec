@@ -156,7 +156,19 @@ def inject_css_and_title():
         .stMain:has(#login-form) button {
             margin-bottom: 5px !important;
         }
+        ul[data-testid="stSidebarNavItems"] li:nth-child(2) {
+            display: block !important;
+        }
+        ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
+            display: none !important;
+        }           
         @media (max-width: 768px) {
+            ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
+                display: block !important;
+            }       
+            ul[data-testid="stSidebarNavItems"] li:nth-child(2) {
+                display: none !important;
+            }   
             header+section>div {
                 padding-top: 20px !important;
                 padding-bottom: 20px !important;
