@@ -24,16 +24,24 @@ button[kind="secondary"] {
     border-right: 0px !important;
     box-shadow: none;
     margin-bottom: 0px !important;
-    padding-bottom: 10px !important;
-    padding-top: 0px;
-    margin-top: 0px !important;
+    padding-bottom: 15px !important;
+    padding-top: 20px;
+    margin-top: -16px !important;
     text-align: left !important;
     display: block;
-    padding-left: 0;
-    padding-right: 0px;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 button[kind="secondary"] p {
     margin-top: -10px;
+}
+label p {
+    font-size: 14px !important;
+    line-height: 1.9;
+}
+
+label {
+    margin-right: 5px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -58,15 +66,21 @@ if "__selected_recipe__" not in st.session_state:
     st.markdown("""
     <style>
     .food-btn button {
-        background: #fff !important;
-        border: 1px solid #eee !important;
-        border-radius: 12px !important;
         color: #222 !important;
         font-weight: 600 !important;
-        width: 100% !important;
-        padding: 14px 10px !important;
-        margin-bottom: 8px !important;
+        border-radius: 0px;
+        border-top: 0px !important;
+        border-left: 0px !important;
+        border-right: 0px !important;
+        box-shadow: none;
+        margin-bottom: 0px !important;
+        padding-bottom: 15px !important;
+        padding-top: 20px;
+        margin-top: -16px !important;
         text-align: left !important;
+        display: block;
+        padding-left: 10px;
+        padding-right: 10px;
     }
     .stVerticalBlock > .stElementContainer {
         width: 100%;
@@ -179,6 +193,7 @@ else:
         background: linear-gradient(90deg, #f9ad1a, #ee6a04);
         padding: 10px !important;
         border-radius: 5px;
+        margin-top: 10px !important;
     }
 
     .st-key-log_meal button p {
