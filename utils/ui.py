@@ -29,6 +29,9 @@ def inject_css_and_title():
           padding-bottom: 0px !important;
           margin-top: 0px;
       }
+       button[data-testid="stBaseButton-headerNoPadding"] {
+        background: none !important;
+       }
       h1#mediterranean-diet-recommendation-system span { 
           color: #153222;       
         }
@@ -39,6 +42,17 @@ def inject_css_and_title():
       .pill.good{background:#ecfdf5;color:#065f46}
       .pill.warn{background:#fff7ed;color:#92400e}
       .pill.bad{background:#fef2f2;color:#991b1b}
+                
+       label.bmi-label {
+            font-size: 0.875rem;
+            margin-bottom: -22px !important;
+            display: block;
+        }
+
+        .divider-space {
+            display: block;
+            height: 39px;
+        }         
 
       .metricicon{font-size:1.3rem;background:#e7efff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
       .metricmain{font-size:1.2rem;font-weight:800;color:#1a3d7c}
@@ -156,17 +170,24 @@ def inject_css_and_title():
         .stMain:has(#login-form) button {
             margin-bottom: 5px !important;
         }
-        ul[data-testid="stSidebarNavItems"] li:nth-child(2) {
+        ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
             display: block !important;
         }
-        ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
+        ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
             display: none !important;
-        }           
+        } 
+        .bmi-category {
+            padding: 10px;
+            margin-top: 27px;
+        }
+        h3#dietary-style-and-constraints, h3#health-conditions {
+            font-size: 22px;
+        }          
         @media (max-width: 768px) {
-            ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
+            ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
                 display: block !important;
             }       
-            ul[data-testid="stSidebarNavItems"] li:nth-child(2) {
+            ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
                 display: none !important;
             }   
             header+section>div {

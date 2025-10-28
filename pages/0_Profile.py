@@ -30,7 +30,7 @@ with col_sel:
     if "default" not in names: names = ["default"] + names
     sel_name = st.selectbox("Profile name", names, index=names.index("default") if "default" in names else 0)
 with col_new:
-    new_name = st.text_input("Create new profile", placeholder="e.g., cut-phase, pescatarian")
+    new_name = st.text_input("Create new profile", placeholder="cut-phase, pescatarian")
 
 # Hydrate once per profile selection
 hydrate_key = f"__hydrated_profile__:{sel_name}"
@@ -73,19 +73,78 @@ with st.form("profile_form", clear_on_submit=False):
     with c1:
         age       = st.number_input("Age", 12, 99, value=st.session_state["age"])
         height_cm = st.number_input("Height (cm)", 120, 210, value=st.session_state["height_cm"])
-        sex       = st.selectbox("Sex", ["Female","Male"], index=0 if st.session_state["sex"]=="Female" else 1)
+        sex       = st.selectbox("Sex", ["Female","Male"],
+                                index=0 if st.session_state["sex"]=="Female" else 1)
+
     with c2:
-        weight_kg = st.number_input("Weight (kg)", 35.0, 200.0, value=st.session_state["weight_kg"], step=0.5)
-        activity  = st.selectbox("Activity", ["Sedentary","Light","Moderate","Active","Very Active"],
-                                 index=["Sedentary","Light","Moderate","Active","Very Active"].index(st.session_state["activity"]))
-        goal      = st.selectbox("Goal", ["Maintain","Fat Loss","Weight Gain"],
-                                 index=["Maintain","Fat Loss","Weight Gain"].index(st.session_state["goal"]))
+        weight_kg = st.number_input("Weight (kg)", 35.0, 200.0,
+                                    value=st.session_state["weight_kg"], step=0.5)
+
+        # --- Goal selectbox ---
+        current_goal = st.session_state["goal"]
+        if current_goal == "Fat Loss":
+            current_goal = "Fat Loss (Diet only)"  # backward compatibility
+
+        goal_options = ["Maintain",
+                        "Fat Loss (Diet only)",
+                        "Fat Loss (Diet + Exercise)",
+                        "Weight Gain"]
+
+        goal = st.selectbox(
+            "Goal",
+            goal_options,
+            index=goal_options.index(current_goal) if current_goal in goal_options else 0
+        )
+
+        # -------- Full-width row (spans all columns) --------
+        activity = st.selectbox(
+            "Current Activity Level",
+            ["Sedentary", "Light", "Moderate", "Active", "Very Active"],
+            index=["Sedentary","Light","Moderate","Active","Very Active"].index(st.session_state["activity"])
+        )
+
     with c3:
-        pattern   = st.selectbox("Meal pattern", ["3_meals_1_snack","2_meals_2_snacks"],
-                                 index=0 if st.session_state["pattern"]=="3_meals_1_snack" else 1)
-        ai_lang   = st.selectbox("AI Coach language", ["English","العربية","Français"],
-                                 index=["English","العربية","Français"].index(st.session_state["ai_language"]))
-        st.write("")  # spacer
+        pattern   = st.selectbox("Meal pattern",
+                                ["3_meals_1_snack","2_meals_2_snacks"],
+                                index=0 if st.session_state["pattern"]=="3_meals_1_snack" else 1)
+        ai_lang   = st.selectbox("AI Coach language",
+                                ["English","العربية","Français"],
+                                index=["English","العربية","Français"].index(st.session_state["ai_language"]))
+
+        # --- BMI computation ---
+        bmi = round(float(weight_kg) / ((float(height_cm) / 100) ** 2), 1)
+        if bmi < 18.5:
+            bmi_label, color = "Underweight", "#2a7df0"
+        elif bmi < 25:
+            bmi_label, color = "Normal", "#2db483"
+        elif bmi < 30:
+            bmi_label, color = "Overweight", "#f9ad1a"
+        else:
+            bmi_label, color = "Obese", "#d93025"
+
+        st.markdown(
+            f"<label class='bmi-label'>My BMI</label>"
+            f"<div class='bmi-category' style='border-radius:8px;"
+            f"background:rgba(0,0,0,0.03);font-size:13px;'>"
+            f"<b>BMI:</b> <span style='color:{color}'>{bmi}</span> ({bmi_label})</div>",
+            unsafe_allow_html=True
+        )
+
+    st.markdown(
+        """
+        <div style='font-size:13px; line-height:1.5; margin-top:-5px; color:#444;'>
+        <b>Activity level guide:</b><br>
+        🪑 <b>Sedentary:</b> Little or no exercise, mostly sitting (office work).<br>
+        🚶 <b>Light:</b> Light exercise 1–3 days/week (casual walking).<br>
+        🏃 <b>Moderate:</b> Moderate exercise 3–5 days/week (gym, brisk walking, cycling).<br>
+        🧗 <b>Active:</b> Hard exercise 6–7 days/week or physical job.<br>
+        🥇 <b>Very Active:</b> Intense daily training or highly physical occupation.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<hr style='margin:30px 0 10px;'>", unsafe_allow_html=True)
 
     st.markdown("### Health Conditions")
     hc1, hc2, hc3 = st.columns(3)
@@ -100,28 +159,93 @@ with st.form("profile_form", clear_on_submit=False):
     with hc3:
         autoimmune     = st.checkbox("Autoimmune / RA (anti-inflammatory)", value=st.session_state["autoimmune"])
 
+    st.markdown("<hr style='margin:30px 0 10px;'>", unsafe_allow_html=True)
+
     st.markdown("### Dietary Style & Constraints")
     dc1, dc2, dc3 = st.columns(3)
+
     with dc1:
         vegan        = st.checkbox("Vegan", value=st.session_state["vegan"])
         vegetarian   = st.checkbox("Vegetarian", value=st.session_state["vegetarian"])
+        prefer_str   = st.text_input(
+            "Prefer ingredients (comma-separated)",
+            value=st.session_state["prefer_str"]
+        )   
+
     with dc2:
         pescatarian  = st.checkbox("Pescatarian", value=st.session_state["pescatarian"])
         gluten_free  = st.checkbox("Gluten-free", value=st.session_state["gluten_free"])
-    with dc3:
-        dairy_free   = st.checkbox("Dairy-free", value=st.session_state["dairy_free"])
+        avoid_str    = st.text_input(
+            "Avoid ingredients (comma-separated)",
+            value=st.session_state["avoid_str"]
+        )
 
-    prefer_str = st.text_input("Prefer ingredients (comma-separated)",
-                               value=st.session_state["prefer_str"])
-    avoid_str  = st.text_input("Avoid ingredients (comma-separated)",
-                               value=st.session_state["avoid_str"])
+    with dc3:
+        dairy_free = st.checkbox("Dairy-free", value=st.session_state["dairy_free"])
+        st.markdown("<div class='divider-space'></div>", unsafe_allow_html=True)
+        preferred_activity = st.text_input(
+            "Preferred Activity or Sport",
+            value=st.session_state.get("preferred_activity", "Walking, Yoga, Cycling"),
+            placeholder="e.g., Walking, Swimming, Yoga, Strength Training"
+        )
+
 
     # --------- Live target preview ----------
     daily_kcal = derive_daily_calorie_target(int(age), float(weight_kg), int(height_cm), sex, activity, goal)
     per_meal   = split_meal_targets(daily_kcal, pattern)
-    st.info(f"**Daily energy target:** {daily_kcal} kcal  "
-            f"• Breakfast {per_meal['Breakfast']}  • Lunch {per_meal['Lunch']}  "
-            f"• Dinner {per_meal['Dinner']}  • Snack {per_meal['Snack']} kcal")
+    def calculate_bmr(weight_kg: float, height_cm: float, age: int, sex: str) -> float:
+        """Mifflin-St Jeor Equation (kcal/day)"""
+        if sex == "Male":
+            return 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
+        else:
+            return 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
+
+    # --- Caloric targets ---
+    bmr = calculate_bmr(float(weight_kg), float(height_cm), int(age), sex)
+
+    # Activity multiplier (simplified version similar to TDEE factors)
+    activity_factors = {
+        "Sedentary": 1.2,
+        "Light": 1.375,
+        "Moderate": 1.55,
+        "Active": 1.725,
+        "Very Active": 1.9
+    }
+    tdee = bmr * activity_factors.get(activity, 1.4)
+
+    # Base target (BMR) → adjusted for goal
+    if goal == "Maintain":
+        target_intake = tdee
+        target_expenditure = 0
+    elif goal == "Fat Loss (Diet only)":
+        target_intake = tdee * 0.85       # 15% caloric deficit
+        target_expenditure = 0
+    elif goal == "Fat Loss (Diet + Exercise)":
+        target_intake = tdee * 0.9        # smaller dietary cut
+        target_expenditure = (tdee - target_intake) * 0.5  # assume half of deficit via activity
+    else:  # Weight Gain
+        target_intake = tdee * 1.15
+        target_expenditure = 0
+
+    target_intake = int(round(target_intake))
+    target_expenditure = int(round(target_expenditure))
+    bmr = int(round(bmr))
+    tdee = int(round(tdee))
+
+    per_meal = split_meal_targets(target_intake, pattern)
+
+    # --- Display block ---
+    st.markdown(f"""
+    <div style='background:#f9f9f9;border:1px solid #eee;border-radius:8px;padding:10px 14px;margin-top:10px;margin-bottom:20px;font-size:13.5px;'>
+    <b>BMR:</b> {bmr} kcal/day<br>
+    <b>Total Daily Energy Expenditure (TDEE):</b> {tdee} kcal/day<br>
+    <b>Target Intake:</b> {target_intake} kcal/day<br>
+    <b>Expected Activity Expenditure:</b> {target_expenditure} kcal/day
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.info(f"**Meal split suggestion:** Breakfast {per_meal['Breakfast']} • "
+            f"Lunch {per_meal['Lunch']} • Dinner {per_meal['Dinner']} • Snack {per_meal['Snack']} kcal")
 
     # --------- Submit row ----------
     save_col, spacer, create_col = st.columns([1,6,1])

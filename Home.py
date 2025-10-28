@@ -24,6 +24,23 @@ st.markdown("""
   --grad2:linear-gradient(90deg,#6366f1,#22d3ee);
   --good:#10b981; --warn:#f59e0b; --bad:#ef4444;
 }
+ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
+    display: block !important;
+}
+ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
+    display: none !important;
+}           
+@media (max-width: 768px) {
+    ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
+        display: block !important;
+    }       
+    ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
+        display: none !important;
+    } 
+}
+button[data-testid="stBaseButton-headerNoPadding"] {
+    background: none;
+}
 .home-grid{display:grid;grid-template-columns:1.25fr .9fr;gap:18px;margin-top:.4rem}
 .card{background:var(--bg); border:1px solid var(--stroke); border-radius:18px; padding:18px 20px;
       box-shadow:0 10px 28px rgba(18,38,63,.06)}
@@ -338,29 +355,29 @@ ldf = _df_logged()
 tot = {k: float(ldf[k].sum()) if k in ldf.columns else 0.0
        for k in ["calories_kcal","protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]}
 
-st.markdown("""
-<div class="qa-card">
-  <div class="qa-title">Quick actions</div>
-  <div class="qa-grid">
-    <a class="qa-tile" href="./Recommendations" target="_self" rel="noopener">
-      <span class="qa-emoji">🍽️</span>
-      <div><div>Pick meals</div><div class="qa-sub">Top matches for today</div></div>
-    </a>
-    <a class="qa-tile" href="./Logged_Today" target="_self" rel="noopener">
-      <span class="qa-emoji">🧾</span>
-      <div><div>Manage logged</div><div class="qa-sub">Edit & remove quickly</div></div>
-    </a>
-    <a class="qa-tile" href="./Coach_and_Insights" target="_self" rel="noopener">
-      <span class="qa-emoji">🧠</span>
-      <div><div>Coach & Insights</div><div class="qa-sub">Focus for the day</div></div>
-    </a>
-    <a class="qa-tile" href="./Recipe_Composer" target="_self" rel="noopener">
-      <span class="qa-emoji">🧑‍🍳</span>
-      <div><div>Compose recipe</div><div class="qa-sub">AI + rules composer</div></div>
-    </a>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+# st.markdown("""
+# <div class="qa-card">
+#   <div class="qa-title">Quick actions</div>
+#   <div class="qa-grid">
+#     <a class="qa-tile" href="./Recommendations" target="_self" rel="noopener">
+#       <span class="qa-emoji">🍽️</span>
+#       <div><div>Pick meals</div><div class="qa-sub">Top matches for today</div></div>
+#     </a>
+#     <a class="qa-tile" href="./Logged_Today" target="_self" rel="noopener">
+#       <span class="qa-emoji">🧾</span>
+#       <div><div>Manage logged</div><div class="qa-sub">Edit & remove quickly</div></div>
+#     </a>
+#     <a class="qa-tile" href="./Coach_and_Insights" target="_self" rel="noopener">
+#       <span class="qa-emoji">🧠</span>
+#       <div><div>Coach & Insights</div><div class="qa-sub">Focus for the day</div></div>
+#     </a>
+#     <a class="qa-tile" href="./Recipe_Composer" target="_self" rel="noopener">
+#       <span class="qa-emoji">🧑‍🍳</span>
+#       <div><div>Compose recipe</div><div class="qa-sub">AI + rules composer</div></div>
+#     </a>
+#   </div>
+# </div>
+# """, unsafe_allow_html=True)
 
 
 # ---------- Main stack: stats then feed (one under the other)
