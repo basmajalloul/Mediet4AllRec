@@ -7,6 +7,8 @@ from meddiet_rules import derive_daily_calorie_target, split_meal_targets
 from utils.ui import inject_css_and_title, topbar_logo_and_title
 from utils.state import ensure_session_keys
 
+inject_css_and_title()
+
 st.set_page_config(page_title="Profile • Mediet4All", layout="wide")
 
 user = auth_gate()
@@ -17,7 +19,6 @@ user_name = user.get("user_metadata", {}).get("name") or user.get("email", "User
 st.markdown(f"<h3 class='welcome-back profile-welcome'>👋 Welcome back, <b>{user_name.split('@')[0].title()}</b>!</h3>", unsafe_allow_html=True)
 
 ensure_session_keys()
-inject_css_and_title()
 topbar_logo_and_title()
 
 st.markdown("## My Profile")

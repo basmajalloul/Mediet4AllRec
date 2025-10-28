@@ -198,12 +198,18 @@ for i, (tab, meal) in enumerate(zip(tabs, meal_order)):
 
         target_kcal = per_meal[meal]
         pool = recommend(df, meal, target_kcal, diet_prefs, health, k=24,
-                         exclude_recipe_ids=st.session_state.get("logged", []))
+                 exclude_recipe_ids=st.session_state.get("logged", []))
         if pool.empty:
             st.warning("No matching recipes found for current filters. Try relaxing constraints.")
             continue
 
+        # --- Ensure Med compliance column exists before rescoring ---
+        if "fit_med_compliance" not in pool.columns:
+            from meddiet_rules import _med_compliance_score
+            pool["fit_med_compliance"] = pool.apply(_med_compliance_score, axis=1)
+
         pool = ml.apply_rescorer_blend(pool, RESCORER, alpha=0.6)
+
         emb_rows = [idx["rid2pos"][rid] for rid in pool["recipe_id"].tolist()]
         emb_pool = idx["emb"][emb_rows]
 
@@ -258,12 +264,12 @@ for i, (tab, meal) in enumerate(zip(tabs, meal_order)):
                                         height: 50px;
                                     }
                                     .stTabs [role="tabpanel"] span.badge {
-                                        margin-bottom: -35px;
                                         display: block;
                                         width: fit-content;
                                         float: right;
                                         font-size: 12px;
-                                        margin-top: -18px;
+                                        margin-top: -5px;
+                                        margin-bottom: 15px;
                                     }
                                     .stTabs [role="tabpanel"] .stTabs [role="tabpanel"] button p {
                                         font-size: 13px;

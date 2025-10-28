@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.ensemble import RandomForestRegressor
 
-from meddiet_rules import compute_meal_fit_score
+from meddiet_rules import compute_meal_fit_score, _med_compliance_score
 
 
 # ---------- Embedding index (TF-IDF + SVD + nutrients) ----------
@@ -76,26 +76,34 @@ def build_recipe_index(df: pd.DataFrame):
 # ---------- Train a tiny learned re-scorer over rule features ----------
 @st.cache_resource(show_spinner=False)
 def train_rescorer(df: pd.DataFrame, per_meal_target: dict, diet_prefs: dict, health: dict):
-    FEATS = ["fit_diet_style","fit_no_avoids","fit_prefer_bonus","fit_health_mod",
-             "protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]
-    df_all = df.copy()
-    cal_list=diet_list=avoids_list=prefer_list=health_list=score_list=[]
+    FEATS = [
+        "fit_diet_style","fit_no_avoids","fit_prefer_bonus","fit_health_mod","fit_med_compliance",
+        "protein_g","carbs_g","fat_g","fiber_g","sodium_mg"
+    ]
 
-    cal_list, diet_list, avoids_list, prefer_list, health_list, score_list = [], [], [], [], [], []
+    df_all = df.copy()
+
+    cal_list, diet_list, avoids_list, prefer_list, health_list, med_list, score_list = [], [], [], [], [], [], []
+
     for _, row in df_all.iterrows():
         meal = str(row["meal_type"])
         kcal_tgt = int(per_meal_target.get(meal, per_meal_target.get("Lunch", 600)))
         s, dbg = compute_meal_fit_score(row, kcal_tgt, diet_prefs, health)
         score_list.append(s)
-        cal_list.append(dbg["cal_term"]); diet_list.append(dbg["diet_term"])
-        avoids_list.append(dbg["avoid_term"]); prefer_list.append(dbg["prefer_term"])
+        cal_list.append(dbg["cal_term"])
+        diet_list.append(dbg["diet_term"])
+        avoids_list.append(dbg["avoid_term"])
+        prefer_list.append(dbg["prefer_term"])
         health_list.append(dbg["health_mod"])
+        med_list.append(_med_compliance_score(row))
 
-    df_all["fit_score"]        = score_list
-    df_all["fit_diet_style"]   = diet_list
-    df_all["fit_no_avoids"]    = avoids_list
-    df_all["fit_prefer_bonus"] = prefer_list
-    df_all["fit_health_mod"]   = health_list
+    # assign all lists as new columns
+    df_all["fit_score"]          = score_list
+    df_all["fit_diet_style"]     = diet_list
+    df_all["fit_no_avoids"]      = avoids_list
+    df_all["fit_prefer_bonus"]   = prefer_list
+    df_all["fit_health_mod"]     = health_list
+    df_all["fit_med_compliance"] = med_list
 
     X = df_all[FEATS].fillna(0.0).astype(float).values
     y = df_all["fit_score"].fillna(0.0).astype(float).values
@@ -104,14 +112,24 @@ def train_rescorer(df: pd.DataFrame, per_meal_target: dict, diet_prefs: dict, he
     model.fit(X, y)
     return model
 
+
 def apply_rescorer_blend(df_in: pd.DataFrame, model, alpha: float = 0.6):
-    FEATS = ["fit_diet_style","fit_no_avoids","fit_prefer_bonus","fit_health_mod",
-             "protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]
+    FEATS = ["fit_diet_style","fit_no_avoids","fit_prefer_bonus","fit_health_mod","fit_med_compliance",
+         "protein_g","carbs_g","fat_g","fiber_g","sodium_mg"]
+    
+    # --- ensure Med compliance column exists ---
+    if "fit_med_compliance" not in df_in.columns:
+        df_in["fit_med_compliance"] = df_in.apply(_med_compliance_score, axis=1)
+
     X = df_in[FEATS].fillna(0.0).astype(float).values
     out = df_in.copy()
     out["fit_learned"] = model.predict(X)
     base = out.get("fit_score", pd.Series(np.zeros(len(out)), index=out.index)).astype(float)
     out["fit_blend"] = alpha*out["fit_learned"] + (1-alpha)*base
+    # Mediterranean compliance reweighting (stronger penalty for non-Med foods)
+    if "fit_med_compliance" in out.columns:
+        out["fit_blend"] = out["fit_blend"] * (0.5 + 0.5 * out["fit_med_compliance"])
+
     return out
 
 # ---------- Diversity MMR ----------

@@ -3,6 +3,21 @@ import numpy as np
 import re
 from typing import Dict, List, Tuple
 
+def _med_compliance_score(row) -> float:
+    """Return 1.0 for fully Med-compliant, 0.5 partial, 0 otherwise."""
+    tags  = str(row.get("diet_tags", "")).lower()
+    attrs = str(row.get("med_attributes", "")).lower()
+
+    core = ["olive_oil", "whole_grains", "vegetables", "fruits",
+            "fish", "nuts_seeds", "legumes", "yogurt_cheese"]
+    n_hits = sum(k in attrs for k in core)
+    base = n_hits / len(core)
+
+    if "mediterranean" in tags:
+        base = min(1.0, base + 0.2)
+
+    return float(np.clip(base, 0.0, 1.0))
+
 def _normalize_list(s: str) -> List[str]:
     if not isinstance(s, str) or not s.strip():
         return []
@@ -115,13 +130,20 @@ def compute_meal_fit_score(row, kcal_target: int, diet_prefs: Dict, health: Dict
     ing_hit  = bool(prefer & ing)
 
     prefer_term = 1.0 + (0.15 if (ing_hit or attr_hit) else 0.0)
-
     health_mod = _health_modifiers(row, health)
+    med_compliance = _med_compliance_score(row)
 
-    total = cal_term * diet_term * avoid_term * prefer_term * health_mod
-    dbg = {"cal_term":float(cal_term),"diet_term":float(diet_term),"avoid_term":float(avoid_term),
-           "prefer_term":float(prefer_term),"health_mod":float(health_mod),"total":float(total)}
+    # Penalize non-Med foods: 0.5× if non-compliant, 0.8× if partial
+    med_term = 0.5 + 0.5 * med_compliance
+
+    total = cal_term * diet_term * avoid_term * prefer_term * health_mod * med_term
+    dbg = {
+        "cal_term":float(cal_term),"diet_term":float(diet_term),"avoid_term":float(avoid_term),
+        "prefer_term":float(prefer_term),"health_mod":float(health_mod),
+        "med_term":float(med_term),"total":float(total)
+    }
     return total, dbg
+
 
 def recommend(df: pd.DataFrame, meal_type: str, kcal_target: int, diet_prefs: Dict, health: Dict, k: int = 5, exclude_recipe_ids: List[str] = None) -> pd.DataFrame:
     mt = (

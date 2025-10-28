@@ -643,33 +643,40 @@ with qc2:
     # use your profile weight
     _w = float(weight_kg if "weight_kg" in locals() else st.session_state.get("profile", {}).get("weight_kg", 70.0))
 
-    # icon, label, minutes, MET, intensity
+    # icon, label, minutes, MET, intensity, description
     quick_items = [
-        ("🚶", "Walk",     30, 3.5, "Moderate"),
-        ("🏃", "Run",      20, 9.8, "Vigorous"),
-        ("🚴", "Cycle",    30, 7.0, "Moderate"),
-        ("🧘", "Yoga",     20, 2.8, "Light"),
-        ("🏋️", "Strength", 20, 6.0, "Moderate"),
-        ("🤸", "Stretch",  10, 2.3, "Light"),
+        ("🚶", "Walk",     30, 3.5, "Moderate",
+        "Brisk walking (4–5 km/h) on level ground."),
+        ("🏃", "Run",      20, 9.8, "Vigorous",
+        "Running or jogging at 8–10 km/h pace (vigorous effort)."),
+        ("🚴", "Cycle",    30, 7.0, "Moderate",
+        "Cycling at 16–19 km/h on level terrain."),
+        ("🧘", "Yoga",     20, 2.8, "Light",
+        "Hatha yoga or gentle stretching sessions."),
+        ("🏋️", "Strength", 20, 6.0, "Moderate",
+        "Strength training (weight lifting, resistance bands, bodyweight exercises)."),
+        ("🤸", "Stretch",  10, 2.3, "Light",
+        "General flexibility/stretching or mobility exercises."),
     ]
 
     st.markdown('<span class="qbox-start"></span>', unsafe_allow_html=True)
-    st.markdown('<div class="hchip" style="margin-top: -20px; margin-bottom: 25px;"><div class="ico">⚡</div><div>Quick adds</div></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="hchip" style="margin-top: -20px; margin-bottom: 25px;">'
+        '<div class="ico">⚡</div><div>Quick adds</div></div>',
+        unsafe_allow_html=True
+    )
 
     for row in _chunks(quick_items, 3):
         cols = st.columns(3, gap="small")
-        for col, (emoji, kind, mins, met, inten) in zip(cols, row):
+        for col, (emoji, kind, mins, met, inten, desc) in zip(cols, row):
             with col:
                 kcal = est_kcal(met, mins, _w)
-                # one compact card: button + overlay badge inside the same column
-                if st.button(f"{emoji}  {kind} · {mins}m", key=f"qa_{kind}_{mins}", use_container_width=True,
-                            help=f"Est. ~{kcal} kcal"):
+                # button with tooltip showing specifics
+                if st.button(f"{emoji}  {kind} · {mins}m", key=f"qa_{kind}_{mins}",
+                            use_container_width=True, help=f"{desc}\nEst. ~{kcal} kcal"):
                     log_quick_activity(kind, mins, inten, kcal)
-                # overlay badge (absolute; doesn't add extra height)
                 st.markdown(f"<span class='qa-badge'>~{kcal} kcal</span>", unsafe_allow_html=True)
         st.markdown('<span class="row-sep"></span>', unsafe_allow_html=True)
-
-
 
 with qc3:
     st.markdown('<span class="qbox-start"></span>', unsafe_allow_html=True)
@@ -753,27 +760,111 @@ st.markdown('<div class="wk-head"><div class="wk-ico">📝</div><div>Log a worko
 
 left, right = st.columns([1.25, 1])
 
-# --- LEFT: inputs (stateful, no form, so estimate updates live) ---
+# --- LEFT: inputs (stateful, live estimation) ---
 with left:
-    # keep state
     _kind = st.session_state.get("wk_kind", "Walk")
     _intensity = st.session_state.get("wk_intensity", "Moderate")
     _duration = int(st.session_state.get("wk_duration", 30))
     _notes = st.session_state.get("wk_notes", "")
 
-    with st.container():  # balanced
-        _kind = st.radio("Type", ["Walk","Run","Cycle","Swim","Strength","Yoga","Other"],
-                         index=["Walk","Run","Cycle","Swim","Strength","Yoga","Other"].index(_kind),
-                         horizontal=True, key="wk_kind")
+    # --- Activity type ---
+    _kind = st.radio(
+        "Type",
+        ["Walk","Run","Cycle","Swim","Strength","Yoga","Other"],
+        index=["Walk","Run","Cycle","Swim","Strength","Yoga","Other"].index(_kind),
+        horizontal=True, key="wk_kind"
+    )
 
-    with st.container():
-        _intensity = st.radio("Intensity", ["Low","Moderate","Vigorous"],
-                              index=["Low","Moderate","Vigorous"].index(_intensity),
-                              horizontal=True, key="wk_intensity")
+    # --- Intensity legend per activity ---
+    INTENSITY_GUIDE = {
+        "Walk": {
+            "Low": "Slow pace (~3 km/h)",
+            "Moderate": "Brisk pace (4–5 km/h)",
+            "Vigorous": "Fast / uphill (>6 km/h)"
+        },
+        "Run": {
+            "Low": "Jog (7–8 km/h)",
+            "Moderate": "Steady run (9–11 km/h)",
+            "Vigorous": "Fast run / intervals (>12 km/h)"
+        },
+        "Cycle": {
+            "Low": "Leisure (10–15 km/h)",
+            "Moderate": "Recreational (16–19 km/h)",
+            "Vigorous": "Fast (>20 km/h or hills)"
+        },
+        "Swim": {
+            "Low": "Leisurely / floating",
+            "Moderate": "Continuous steady laps",
+            "Vigorous": "Intense laps / competitive"
+        },
+        "Strength": {
+            "Low": "Light weights / long rest",
+            "Moderate": "Standard gym session (8–12 reps)",
+            "Vigorous": "Circuit / HIIT / minimal rest"
+        },
+        "Yoga": {
+            "Low": "Gentle stretching / Yin",
+            "Moderate": "Hatha / Flow",
+            "Vigorous": "Power / Vinyasa"
+        },
+        "Other": {
+            "Low": "Low-effort activity",
+            "Moderate": "Sustained, moderate effort",
+            "Vigorous": "High-effort or competitive"
+        }
+    }
 
-    _duration = st.slider("Duration (min)", min_value=5, max_value=180, value=_duration, step=5, key="wk_duration")
+    # --- Intensity selector (with legend text) ---
+    _intensity = st.radio(
+        "Intensity",
+        ["Low","Moderate","Vigorous"],
+        index=["Low","Moderate","Vigorous"].index(_intensity),
+        horizontal=True,
+        key="wk_intensity"
+    )
 
+    # Display the specific meaning (speed / description)
+    st.markdown(
+        f"<div style='font-size:13px;color:#555;margin-top:-8px;margin-bottom:10px;'>"
+        f"<i>{INTENSITY_GUIDE[_kind][_intensity]}</i></div>",
+        unsafe_allow_html=True
+    )
+
+    # --- Duration ---
+    _duration = st.slider("Duration (min)", 5, 180, _duration, step=5, key="wk_duration")
+
+    # --- Notes ---
     _notes = st.text_input("Notes (optional)", value=_notes, key="wk_notes")
+
+    # --- Weight from profile ---
+    _weight = float(st.session_state.get("weight_kg", 70.0))
+
+    # --- MET table ---
+    MET_TABLE = {
+        "Walk":      {"Low": 2.8, "Moderate": 3.8, "Vigorous": 5.0},
+        "Run":       {"Low": 7.0, "Moderate": 9.8, "Vigorous": 11.5},
+        "Cycle":     {"Low": 4.0, "Moderate": 7.0, "Vigorous": 10.0},
+        "Swim":      {"Low": 6.0, "Moderate": 8.0, "Vigorous": 10.0},
+        "Strength":  {"Low": 3.5, "Moderate": 6.0, "Vigorous": 8.0},
+        "Yoga":      {"Low": 2.5, "Moderate": 3.0, "Vigorous": 4.0},
+        "Other":     {"Low": 3.0, "Moderate": 6.0, "Vigorous": 9.0},
+    }
+
+    met_value = MET_TABLE[_kind][_intensity]
+    kcal_est = round((_duration * met_value * _weight * 3.5) / 200, 1)
+
+    # --- Display result ---
+    st.markdown(
+        f"""
+        <div style='background:#f9f9f9;border:1px solid #eee;
+                    border-radius:8px;padding:8px 12px;margin-top:5px;
+                    font-size:13px;'>
+            <b>Est. energy expenditure:</b> {kcal_est} kcal<br>
+            <small>({_kind}, {_intensity.lower()} intensity, {met_value} METs)</small>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --- RIGHT: live estimate + override + button (all balanced) ---
 with right:

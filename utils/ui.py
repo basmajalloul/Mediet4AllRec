@@ -7,7 +7,8 @@ from utils.state import ORDERED_MEALS
 from utils.db import append_logged_meal
 from datetime import date
 from utils.db import append_logged_meal, sum_activity_kcal_for_day
-import time
+import pathlib
+
 
 # ---------------- CSS once ----------------
 def inject_css_and_title():
@@ -17,399 +18,11 @@ def inject_css_and_title():
         layout="wide"
     )
     st.set_page_config(page_title="MedDiet Recommender", layout="wide")
-    st.markdown("""
-    <style>                
-      section[data-testid="stSidebar"]{width:380px !important;background:#f5f7fa}
-      .metriccard{background:linear-gradient(135deg,#fefeff 0%,#f1f6ff 100%);border:1px solid #e9eef4;border-radius:16px;padding:18px 22px;box-shadow:0 1px 5px rgba(0,0,0,.05);margin:8px 0}
-      .metricrow{display:flex;gap:12px;align-items:center}
-      h1#mediterranean-diet-recommendation-system {
-          font-weight: 700;
-          font-size: 30px;
-          color: #f9ad1a;
-          padding-bottom: 0px !important;
-          margin-top: 0px;
-      }
-       button[data-testid="stBaseButton-headerNoPadding"] {
-        background: none !important;
-       }
-      h1#mediterranean-diet-recommendation-system span { 
-          color: #153222;       
-        }
-      p#title-caption {
-        font-weight: bold;
-        color: #386bb3;
-      }
-      .pill.good{background:#ecfdf5;color:#065f46}
-      .pill.warn{background:#fff7ed;color:#92400e}
-      .pill.bad{background:#fef2f2;color:#991b1b}
-                
-       label.bmi-label {
-            font-size: 0.875rem;
-            margin-bottom: -22px !important;
-            display: block;
-        }
-
-        .divider-space {
-            display: block;
-            height: 39px;
-        }         
-
-      .metricicon{font-size:1.3rem;background:#e7efff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
-      .metricmain{font-size:1.2rem;font-weight:800;color:#1a3d7c}
-      .metricsub{font-size:.95rem;color:#444;margin-top:3px;font-weight: bold;}
-      .pill{background:#f4f6fb;color:#333;padding:3px 10px;border-radius:999px;font-size:.7rem;margin-right:6px;text-transform: uppercase;}
-      .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#e8f3ea;color:#1c6b2a;font-weight:700;font-size:.80rem}
-      .divider{height:1px;background:#eef2f7;margin:12px 0}
-      .coach-output{
-        padding: 16px 20px;
-        border-radius: 5px;
-        background: #f6f7f7;
-        font-size: .97rem;
-        line-height: 1.55;
-        color: #2a323f;
-        margin-top: 12px;        
-        }
-      h1#meddiet{font-weight:900;text-transform:uppercase;font-size:30px;color:#f9ad1a;margin-top:5px}
-      .title { font-weight: 700; font-size: 1.05rem; margin: 2px 0 4px; }
-      .sub { color:#5b667a; font-size:0.95rem; margin-bottom:12px; }
-      .badge {display:inline-block;padding:4px 10px;border-radius:999px;background:#e8f3ea;color:#1c6b2a;font-weight:600;font-size:0.80rem;}
-      .pills { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0 0; }
-      .pill { background:#f4f6fb; color:#333; padding:3px 10px; border-radius:999px; font-size:0.78rem; }
-      .divider { height:1px; background:rgba(0,0,0,0.06); margin:12px 0; }
-
-      /* metric bars */
-      .metricrow{display:flex;align-items:center;gap:12px;margin:8px 0;}
-      .metricrow .label{min-width:140px;font-weight:600;color:#2a2f3a;}
-      .metricrow .bar{flex:1;height:10px;background:#eef2f7;border-radius:999px;overflow:hidden}
-      .metricrow .bar>span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#f9ad1a,#ee6a04);}
-      .metricrow .pct{color:#6a7485;font-size:0.95rem;min-width:48px;text-align:right}
-
-      /* subtle “why this” bullets */
-      .whybox { background:#fbfcfe; border:1px solid #edf2f7; border-radius:12px; padding:10px 14px; }
-      .whyline { display:flex; gap:8px; align-items:flex-start; margin:6px 0; color:#2a313d; }
-      .whyicon { width:22px; height:22px; display:flex; align-items:center; justify-content:center;
-                 border-radius:50%; background:#eef2ff; border:1px solid #e5e9f3; font-size:14px; }
-      .whytext { font-size:0.95rem; line-height:1.35rem; }
-      .ing { font-size: 13px;}
-      .instructions {
-          margin-top: 4px;
-          font-size: 12px;
-          color: #555;
-          font-style: italic;
-      }
-      a.link {
-          font-size: 12px;
-          float: right;
-      }
-      .whybox div {
-          font-size: 13px !important;
-      }
-      .whybox {
-          margin-bottom: 15px;
-          margin-top: 10px;
-      }
-      
-      .stTabs [role="tabpanel"] button {
-            float: left;
-            background: linear-gradient(90deg, #f9ad1a, #ee6a04);
-            color: #fff;
-            border: 0px;
-            margin-bottom: -45px;
-            position: relative;
-            z-index: 1000;
-        }
-
-        .stTabs [role="tabpanel"] button p {
-            font-size: 14px;
-            font-weight: bold;
-        }
-        h2 {
-            font-size: 26px !important;
-            margin-bottom: 20px !important;
-            font-weight: bold !important;
-        }
-        .stTextInput button {
-            float: none !important;
-            background: none !important;
-            color: black !important;
-            margin-bottom: 0px !important;
-        }
-                    
-        .stFormSubmitButton  button {
-            float: none !important;
-            margin: 0px !important;
-        }
-                    
-        .st-emotion-cache-1echtaq.e6f82ta1 p {
-            font-size: 12px !important;
-            color: #666;
-        }
-
-        .stSidebar button {
-            padding: 5px !important;
-            height: 18px !important;
-            line-height: 13px !important;
-            min-height: 25px;
-            border-radius: 6px;
-            font-weight: bold;
-            background: #f9ad1a;
-            border: 0px;
-        }
-
-        .stSidebar button p {
-            font-weight: bold;
-            color: white !important;
-        }
-        .stSidebar p {
-            font-size: 14px;
-        }
-                
-        .app-header {
-            display: none !important;        
-        }
-        .stMain:has(#login-form) button {
-            margin-bottom: 5px !important;
-        }
-        ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
-            display: block !important;
-        }
-        ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
-            display: none !important;
-        } 
-        .bmi-category {
-            padding: 10px;
-            margin-top: 27px;
-        }
-        h3#dietary-style-and-constraints, h3#health-conditions {
-            font-size: 22px;
-        }          
-        @media (max-width: 768px) {
-            ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
-                display: block !important;
-            }       
-            ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
-                display: none !important;
-            }   
-            header+section>div {
-                padding-top: 20px !important;
-                padding-bottom: 20px !important;
-            }
-            .stRadio {
-                width: 100% !important;
-                margin-bottom: 15px !important;
-            } 
-            .stColumn:has(.compact_card)>div a.link {
-                margin-top: -25px !important;
-            }
-            .stColumn:has(.compact_card)>div {
-                margin-top: -25px !important;
-                margin-bottom: -10px !important;
-            }
-             .stColumn:has(.compact_card)>div .stHorizontalBlock {
-                margin-bottom: -15px !important;    
-            }
-            .stColumn:not(:has(.compact_card)>div) a.extended-link {
-                margin-top: -5px !important;
-                margin-bottom: 10px !important;
-            }
-            .metricmain {
-                font-size: 14px !important;
-            }
-
-            .metricsub {
-                font-size: 14px;
-                line-height: 1.4;
-            }
-
-            .metriccard {
-                padding: 15px;
-            }
-                
-            .metricicon {
-                width: 29px !important;
-                height: 29px;
-                display: flex;
-                min-width: 29px;
-                font-size: 15px !important;
-            }
-
-            h2#daily-recommendations {
-                margin-bottom: 0px !important;
-                padding-bottom: 0;
-                font-size: 21px !important;
-                margin-top: 20px;
-            } 
-            .title {
-                height: auto !important;
-                margin-bottom: 10px !important;
-            }
-
-            .sub {
-                margin-bottom: 0px !important;
-            }
-
-            span.badge {
-                margin-top: -6px !important;
-            }
-
-            .st-af > button {
-                width: 25%;
-            } 
-            h1#welcome-to-mediet4-all {
-                font-size: 28px;
-            } 
-            .st-emotion-cache-4rsbii:has(#login-form) {
-                display: flex;
-                flex-direction: column;
-                width: 100%;
-                overflow: auto;
-                -webkit-box-align: center;
-                align-items: center;
-                height: 100dvh;
-                flex-wrap: nowrap;
-                align-content: center;
-                justify-content: center;
-            }
-            .st-emotion-cache-4rsbii:has(#login-form) .st-af > button {
-                width: 33% !important;    
-            }  
-            .welcome-back {
-                font-size: 22px !important;
-                margin-top: 20px !important;
-            }
-
-            .welcome-back b {
-                font-weight: bold;
-                color: #3c6553;
-            }
-
-            .pill {
-                font-size: 11px !important;
-                padding: 3px 10px !important;
-                border-radius: 999px !important;
-                display: inline !important;
-            }
-            .tile {
-                max-width: calc(100% - (2rem + 40px));
-                display: flex;
-                flex-wrap: wrap;
-                flex-direction: row;
-            }
-
-            .tile .icon {
-                width: 35px !important;
-                height: 35px !important;
-                font-size: 18px !important;
-            }
-
-            .body {
-                max-width: calc(100% - 44px) !important;
-            }
-
-            .head {
-                font-size: 15px;
-                line-height: 1.2;
-            }
-
-            .kchip {
-                font-size: 11px !important;
-                padding: 3px 8px !important;
-            }
-
-            .tag {
-                height: 22px;
-            }
-                
-            .profile-welcome {
-                margin-top: 50px !important;    
-            }
-
-            h3#dietary-style-and-constraints,   
-            h3#health-conditions {
-                font-size: 21px !important;
-            }
-                
-            header {
-                background: orange !important;
-                height: 5rem !important;
-                padding-top: 1.5rem;
-            }
-
-            header * {
-                color: #fff !important;
-            }
-
-            header+section {
-                margin-top: 20px;
-            }
-
-            section[data-testid="stSidebar"] {
-                background: orange;
-            }
-
-            section[data-testid="stSidebar"] * {
-                color: #fff !important;
-            }
-                
-            section[data-testid="stSidebar"] a[aria-current="page"] {
-                background-color: #fff !important;
-                color: #ffa500 !important;
-                font-weight: 800 !important;
-                border-radius: 0px;
-                padding: 7px 10px;
-            }
-                
-            section[data-testid="stSidebar"] a[aria-current="page"] span {
-                color: #ffa500 !important;
-            }
-                
-            section[data-testid="stSidebar"] button {
-                background: none !important;
-            }
-                
-            #root > div:nth-child(1) > div > div > a {
-                display: none !important;
-            }
-                
-            .stMetric {
-                padding: 20px;
-                text-align: center;
-                border-radius: 5px;
-                border: 1px solid #e6edf6;
-                background: radial-gradient(120% 120% at 0% 0%, #ffffff 0%, #f7faff 100%);
-                box-shadow: 0 8px 18px rgba(18, 38, 63, .06);
-                transition: transform .14s ease, box-shadow .14s ease;
-            }
-
-            .stMetric > div > label {
-                text-align: center !important;
-                display: flex;
-                flex-direction: row;
-                flex-wrap: nowrap;
-                align-content: center;
-                justify-content: center;
-                align-items: center;
-            }
-
-            .stMetric > div > label > div {
-                width: auto;
-            }
-
-            div[data-testid="stMetricValue"] div {
-                font-weight: bold;
-                font-size: 29px;
-            }
-                
-            h3#energy-and-activity-overview ,
-            h3#score-explanation,
-            h3#health-check-autoimmune,
-            h3#suggestions-for-improvement {
-                font-size: 20px;
-            }    
-                             
-        }                    
-    </style>
-    """, unsafe_allow_html=True)
+   # --- Load external CSS once ---
+    css_path = pathlib.Path(__file__).parent / "styles.css"
+    if css_path.exists():
+        with open(css_path, encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # --- Global styles reused across pages (cards + metric bars + heading) ---
 
@@ -666,17 +279,22 @@ def render_why_this(row, kcal_target:int):
         bullets.append(("🥗","Matches your chosen diet style."))
     if float(row["fit_no_avoids"]) >= 0.99:
         bullets.append(("🚫","Respects your ‘avoid’ list."))
-    # Preferences
     if float(row["fit_prefer_bonus"]) > 1.0:
         bullets.append(("⭐","Includes one of your preferred ingredients."))
-    # Health mod
     if float(row["fit_health_mod"]) > 1.0:
         bullets.append(("🩺","Favorable for your health profile."))
-    # Macro
     bullets.append(("🍽️","Macro split ≈ {}% protein / {}% carbs / {}% fat.".format(p, c, f)))
-    # Fiber
     if float(row.get("fiber_g", 0)) >= 7:
         bullets.append(("🌿","Good fiber content."))
+
+    # --- Mediterranean compliance ---
+    score = float(row.get("fit_med_compliance", 0))
+    if score > 0.8:
+        bullets.append(("🌿","Mediterranean-compliant meal rich in core Med foods (olive oil, grains, vegetables)."))
+    elif score > 0.4:
+        bullets.append(("⚖️","Partially Med-compliant meal with some healthy Mediterranean elements."))
+    else:
+        bullets.append(("🚫","Not Med-compliant; limited Mediterranean ingredients."))
 
     # Render
     html = ["<div class='whybox'>"]
@@ -729,8 +347,26 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
 
         # utils/ui.py  (inside render_recipe_card, after the "Overall fit" badge line)
         picked = r['recipe_id'] in set(st.session_state.get("optimized_set", set()))
+        # --- Overall Fit + Med Compliance + Picked badges on one line ---
         picked_html = " <span class='badge'>🎯 Picked</span>" if picked else ""
-        st.markdown(f"<span class='badge'>Overall fit: {overall_pct}%</span>{picked_html}", unsafe_allow_html=True)
+
+        med_badge = ""
+        score = float(r.get("fit_med_compliance", 0))
+        if score > 0.8:
+            med_badge = "<span class='badge green'>🌿 Med-compliant</span>"
+        elif score > 0.4:
+            med_badge = "<span class='badge yellow'>⚖️ Partially Med</span>"
+        else:
+            med_badge = "<span class='badge red'>🚫 Non-Med</span>"
+
+        # inline layout
+        st.markdown(
+            f"<div style='display:flex;gap:6px;align-items:center;'>"
+            f"<span class='badge'>Overall fit: {overall_pct}%</span>"
+            f"{med_badge}{picked_html}"
+            f"</div>",
+            unsafe_allow_html=True
+        )
 
         st.markdown(
             f"""
@@ -755,18 +391,49 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
             st.markdown(f"<div class='instructions'>{r.get('instructions','')}</div>", unsafe_allow_html=True)
 
         # --- WHY THIS (dynamic explainer) ---
+                # --- WHY THIS (dynamic explainer) ---
         render_why_this(r, kcal_target)
 
+        # --- Serving size adjustment ---
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        default_serving = 100  # dataset values per 100g by default
+        key_serv = f"{log_key_prefix}_serv_{r['recipe_id']}"
+        serving_g = st.number_input(
+            "Serving size (g)",
+            min_value=50, max_value=1000,
+            value=default_serving, step=25,
+            key=key_serv
+        )
+
+        # Scale nutrients and calories
+        scale = serving_g / default_serving
+        kcal_scaled   = round(float(r.get("calories_kcal", 0)) * scale)
+        protein_scaled = round(float(r.get("protein_g", 0)) * scale, 1)
+        carbs_scaled   = round(float(r.get("carbs_g", 0)) * scale, 1)
+        fat_scaled     = round(float(r.get("fat_g", 0)) * scale, 1)
+        fiber_scaled   = round(float(r.get("fiber_g", 0)) * scale, 1)
+        sodium_scaled  = round(float(r.get("sodium_mg", 0)) * scale)
+
+        # Display scaled info summary
+        st.markdown(
+            f"""
+            <div style='background:#f9f9f9;border:1px solid #eee;
+                        border-radius:8px;padding:8px 12px;margin-top:5px;
+                        font-size:13px;'>
+                <b>Nutrional values ({serving_g} g):</b><br>
+                {kcal_scaled} kcal • Protein {protein_scaled} g • Carbs {carbs_scaled} g • Fat {fat_scaled} g
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         # --- Log button ---
         if st.button("Log this meal", key=f"{log_key_prefix}_log_{r['recipe_id']}"):
             rid = str(r["recipe_id"])
 
-            # optimistic local add (kept separate from DB snapshot)
             st.session_state.setdefault("__logged_local__", set())
             st.session_state["__logged_local__"].add(rid)
 
-            # persist to DB
             uid = st.session_state.get("__user_id__")
             if uid:
                 append_logged_meal(uid, {
@@ -774,25 +441,17 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
                     "recipe_id": rid,
                     "name": r["name"],
                     "meal_type": r.get("meal_type", "Lunch"),
-                    "calories_kcal": float(r.get("calories_kcal", 0)),
-                    "protein_g":     float(r.get("protein_g", 0)),
-                    "carbs_g":       float(r.get("carbs_g", 0)),
-                    "fat_g":         float(r.get("fat_g", 0)),
-                    "fiber_g":       float(r.get("fiber_g", 0)),
-                    "sodium_mg":     float(r.get("sodium_mg", 0)),
+                    "calories_kcal": kcal_scaled,
+                    "protein_g":     protein_scaled,
+                    "carbs_g":       carbs_scaled,
+                    "fat_g":         fat_scaled,
+                    "fiber_g":       fiber_scaled,
+                    "sodium_mg":     sodium_scaled,
                 })
 
-            # tell pages to refetch DB on next render
             st.session_state["__log_dirty__"] = True
-
             st.toast("Logged ✅")
             st.rerun()
-                
-        st.markdown(
-            f"<a href='{_similar_google(str(r['name']), str(r['cuisine']))}' target='_blank' class='link extended-link'>Find similar recipe ↗︎</a>",
-            unsafe_allow_html=True
-        )
-
 
 # ---------------- logged meals iframe (unchanged behavior) ----------------
 def meal_block_html(meal: str, rows: List[dict], logged_kcal: int, target_kcal: int) -> str:
@@ -930,7 +589,25 @@ def render_recipe_card_compact(r, *, kcal_target, diet_prefs, health, log_key_pr
         st.markdown(f"<div class='sub'><b>{int(r['calories_kcal'])} kcal</b> · {r['cuisine']}</div>", unsafe_allow_html=True)
 
         # fit badge
-        st.markdown(f"<span class='badge'>Overall fit: {overall_pct}%</span>", unsafe_allow_html=True)
+        # --- Overall Fit + Med Compliance + Picked badges on one line ---
+        med_badge = ""
+        score = float(r.get("fit_med_compliance", 0))
+        if score > 0.8:
+            med_badge = "<span class='badge green'>🌿 Med-compliant</span>"
+        elif score > 0.4:
+            med_badge = "<span class='badge yellow'>⚖️ Partially Med</span>"
+        else:
+            med_badge = "<span class='badge red'>🚫 Non-Med</span>"
+
+        # inline layout
+        st.markdown(
+            f"<div style='display:flex;gap:6px;align-items:center;'>"
+            f"<span class='badge'>Overall fit: {overall_pct}%</span>"
+            f"{med_badge}"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
 
         # tags
         # if pills_html:
@@ -940,36 +617,51 @@ def render_recipe_card_compact(r, *, kcal_target, diet_prefs, health, log_key_pr
         # if r.get("ingredients"):
         #     st.markdown(f"<div class='ing'><b>Ingredients:</b> {r['ingredients']}</div>", unsafe_allow_html=True)
 
-        # --- Log button + link row ---
-        col1, col2 = st.columns([1,1])
-        with col1:
-            if st.button("Log this meal", key=f"{log_key_prefix}_log_{r['recipe_id']}"):
-                rid = str(r["recipe_id"])
-                st.session_state.setdefault("__logged_local__", set())
-                st.session_state["__logged_local__"].add(rid)
+        # --- Serving size adjustment ---
+        default_serving = 100  # base reference (your dataset values are per 100g)
+        key_serv = f"{log_key_prefix}_serv_{r['recipe_id']}"
+        serving_g = st.number_input(
+            "Serving size (g)",
+            min_value=50, max_value=1000,
+            value=default_serving, step=25,
+            key=key_serv
+        )
 
-                uid = st.session_state.get("__user_id__")
-                if uid:
-                    append_logged_meal(uid, {
-                        "logged_date": str(date.today()),
-                        "recipe_id": rid,
-                        "name": r["name"],
-                        "meal_type": r.get("meal_type", "Lunch"),
-                        "calories_kcal": float(r.get("calories_kcal", 0)),
-                        "protein_g":     float(r.get("protein_g", 0)),
-                        "carbs_g":       float(r.get("carbs_g", 0)),
-                        "fat_g":         float(r.get("fat_g", 0)),
-                        "fiber_g":       float(r.get("fiber_g", 0)),
-                        "sodium_mg":     float(r.get("sodium_mg", 0)),
-                    })
+        # Scale calories and macros according to serving size
+        scale = serving_g / default_serving
+        kcal_scaled   = round(float(r.get("calories_kcal", 0)) * scale)
+        protein_scaled = round(float(r.get("protein_g", 0)) * scale, 1)
+        carbs_scaled   = round(float(r.get("carbs_g", 0)) * scale, 1)
+        fat_scaled     = round(float(r.get("fat_g", 0)) * scale, 1)
+        fiber_scaled   = round(float(r.get("fiber_g", 0)) * scale, 1)
+        sodium_scaled  = round(float(r.get("sodium_mg", 0)) * scale)
 
-                st.session_state["__log_dirty__"] = True
-                st.toast("Logged ✅")
-                st.rerun()
+        # Update display so the user sees the scaled kcal
+        st.markdown(
+            f"<div class='sub'><b>{kcal_scaled} kcal</b> · {r['cuisine']} · {serving_g} g</div>",
+            unsafe_allow_html=True
+        )
 
-        with col2:
-            st.markdown(
-                f"<a href='{_similar_google(str(r['name']), str(r['cuisine']))}' target='_blank' class='link'>Find similar ↗︎</a>",
-                unsafe_allow_html=True
-            )
+        if st.button("Log this meal", key=f"{log_key_prefix}_log_{r['recipe_id']}"):
+            rid = str(r["recipe_id"])
+            st.session_state.setdefault("__logged_local__", set())
+            st.session_state["__logged_local__"].add(rid)
 
+            uid = st.session_state.get("__user_id__")
+            if uid:
+                append_logged_meal(uid, {
+                    "logged_date": str(date.today()),
+                    "recipe_id": rid,
+                    "name": r["name"],
+                    "meal_type": r.get("meal_type", "Lunch"),
+                    "calories_kcal": kcal_scaled,
+                    "protein_g": protein_scaled,
+                    "carbs_g": carbs_scaled,
+                    "fat_g": fat_scaled,
+                    "fiber_g": fiber_scaled,
+                    "sodium_mg": sodium_scaled,
+                })
+
+            st.session_state["__log_dirty__"] = True
+            st.toast("Logged ✅")
+            st.rerun()

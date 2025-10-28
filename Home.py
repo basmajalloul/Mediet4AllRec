@@ -24,19 +24,20 @@ st.markdown("""
   --grad2:linear-gradient(90deg,#6366f1,#22d3ee);
   --good:#10b981; --warn:#f59e0b; --bad:#ef4444;
 }
-ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
+ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
     display: block !important;
 }
-ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
+ul[data-testid="stSidebarNavItems"] li:nth-child(5) {
     display: none !important;
-}           
+} 
+   
 @media (max-width: 768px) {
-    ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
+    ul[data-testid="stSidebarNavItems"] li:nth-child(5) {
         display: block !important;
     }       
-    ul[data-testid="stSidebarNavItems"] li:nth-child(3) {
+    ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
         display: none !important;
-    } 
+    }  
 }
 button[data-testid="stBaseButton-headerNoPadding"] {
     background: none;
