@@ -378,7 +378,7 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
         med_badge = ""
         score = float(r.get("fit_med_compliance", 0))
         if score > 0.8:
-            med_badge = "<span class='badge green'>🌿 Med-compliant</span>"
+            med_badge = "<span class='badge green'>🌿 100% Med</span>"
         elif score > 0.4:
             med_badge = "<span class='badge yellow'>⚖️ Partially Med</span>"
         else:
@@ -423,12 +423,18 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
         st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
         default_serving = 100  # dataset values per 100g by default
         key_serv = f"{log_key_prefix}_serv_{r['recipe_id']}"
-        serving_g = st.number_input(
+        serving_str = st.text_input(
             "Serving size (g)",
-            min_value=50, max_value=1000,
-            value=default_serving, step=25,
-            key=key_serv
+            value=str(default_serving),
+            key=key_serv,
+            help="Enter the meal weight in grams."
         )
+
+        try:
+            serving_g = max(50, min(1000, int(serving_str)))
+        except ValueError:
+            serving_g = default_serving
+
 
         # Scale nutrients and calories
         scale = serving_g / default_serving
@@ -618,7 +624,7 @@ def render_recipe_card_compact(r, *, kcal_target, diet_prefs, health, log_key_pr
         med_badge = ""
         score = float(r.get("fit_med_compliance", 0))
         if score > 0.8:
-            med_badge = "<span class='badge green'>🌿 Med-compliant</span>"
+            med_badge = "<span class='badge green'>🌿 100% Med</span>"
         elif score > 0.4:
             med_badge = "<span class='badge yellow'>⚖️ Partially Med</span>"
         else:
@@ -645,12 +651,17 @@ def render_recipe_card_compact(r, *, kcal_target, diet_prefs, health, log_key_pr
         # --- Serving size adjustment ---
         default_serving = 100  # base reference (your dataset values are per 100g)
         key_serv = f"{log_key_prefix}_serv_{r['recipe_id']}"
-        serving_g = st.number_input(
+        serving_str = st.text_input(
             "Serving size (g)",
-            min_value=50, max_value=1000,
-            value=default_serving, step=25,
-            key=key_serv
+            value=str(default_serving),
+            key=key_serv,
+            help="Enter the meal weight in grams."
         )
+
+        try:
+            serving_g = max(50, min(1000, int(serving_str)))
+        except ValueError:
+            serving_g = default_serving
 
         # Scale calories and macros according to serving size
         scale = serving_g / default_serving

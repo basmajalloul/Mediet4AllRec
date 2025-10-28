@@ -4,19 +4,39 @@ import re
 from typing import Dict, List, Tuple
 
 def _med_compliance_score(row) -> float:
-    """Return 1.0 for fully Med-compliant, 0.5 partial, 0 otherwise."""
-    tags  = str(row.get("diet_tags", "")).lower()
-    attrs = str(row.get("med_attributes", "")).lower()
+    """Return a robust Mediterranean compliance score (0–1)."""
+    tags = str(row.get("diet_tags", "")).lower()
+    attrs = row.get("med_attributes", "")
 
+    # --- Normalize med_attributes ---
+    if isinstance(attrs, list):
+        items = [a.strip().lower() for a in attrs]
+    elif isinstance(attrs, str):
+        items = [a.strip().lower() for a in attrs.replace("[","").replace("]","").replace("'","").split(",")]
+    else:
+        items = []
+
+    # Core Med components
     core = ["olive_oil", "whole_grains", "vegetables", "fruits",
             "fish", "nuts_seeds", "legumes", "yogurt_cheese"]
-    n_hits = sum(k in attrs for k in core)
-    base = n_hits / len(core)
 
+    n_hits = sum(1 for k in core if k in items)
+
+    # Weighted scoring
+    if n_hits >= 4:
+        score = 1.0
+    elif n_hits >= 2:
+        score = 0.8
+    elif n_hits == 1:
+        score = 0.5
+    else:
+        score = 0.0
+
+    # Tag-based boost
     if "mediterranean" in tags:
-        base = min(1.0, base + 0.2)
+        score = min(1.0, score + 0.1)
 
-    return float(np.clip(base, 0.0, 1.0))
+    return round(float(score), 2)
 
 def _normalize_list(s: str) -> List[str]:
     if not isinstance(s, str) or not s.strip():

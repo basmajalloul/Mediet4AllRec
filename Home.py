@@ -88,7 +88,7 @@ button[data-testid="stBaseButton-headerNoPadding"] {
 .qa-sub{color:#64748b;font-weight:600;font-size:.9rem}
 .qa-grid a {text-decoration: none;}
 .stat-card{background:#fff;border:1px solid #e9eef4;border-radius:16px;padding:16px 18px 35px 18px;
-           box-shadow:0 10px 28px rgba(18,38,63,.06);margin-bottom:14px;}
+           box-shadow:0 10px 28px rgba(18,38,63,.06);margin-bottom:14px;margin-top: 20px;}
 .stat-card h3{margin:0 0 10px}
 
 /* 2-up grid, tighter spacing */
@@ -114,12 +114,12 @@ button[data-testid="stBaseButton-headerNoPadding"] {
 /* bar + pill on the same row */
 .barwrap{display:flex;align-items:center;gap:12px;margin-top:-10px;margin-bottom:-15px;}
 .bar{flex:1;height:10px;background:#eef2f7;border-radius:999px;overflow:hidden}
-.fill{height:100%;border-radius:999px;background:linear-gradient(90deg, #f9ad1a, #ee6a04);}
+.fill{height:100%;border-radius:999px;background:linear-gradient(90deg, #f9ad1a, #ee6a04);} 
 
 /* pill stays right of bar, text centered */
 .pill{display:inline-flex;align-items:center;justify-content:center;
      padding:4px 12px;border-radius:999px;border:1px solid #e6edf6;
-     font-weight:700;text-align:center;min-width:92px}
+     font-weight:700;text-align:center;min-width:70px}
 .pill.good{background:#ecfdf5;color:#065f46}
 .pill.warn{background:#fff7ed;color:#92400e}
 .pill.bad{background:#fef2f2;color:#991b1b}
@@ -176,7 +176,13 @@ active_name = st.session_state.get("active_profile_name", "default")
 
 from utils.auth_ui import auth_gate
 user = auth_gate()
+
 user_id = user["id"]
+
+if(not user_id):
+    st.markdown("""<style>.stVerticalBlock {max-width: 400px;margin: auto;}
+    .stVerticalBlock h1 {font-size: 35px;}</style>""", unsafe_allow_html=True)
+
 st.session_state["__user_id__"] = user["id"]
 st.session_state.pop(f"__hydrated_log__:{date.today().isoformat()}", None)
 

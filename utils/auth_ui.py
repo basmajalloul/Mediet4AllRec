@@ -19,7 +19,7 @@ def auth_gate() -> dict:
     if user:
         _sidebar_status(user)
         return user
-    
+        
     st.markdown("""<div id="login-form"/>""", unsafe_allow_html=True)
 
     st.title("Welcome to Mediet4All")
@@ -50,6 +50,10 @@ def auth_gate() -> dict:
     # ---- Create Account ----
     with tab_signup:
         with st.form("signup_form"):
+            
+            st.markdown("""<style>.stVerticalBlock {max-width: 400px;margin: auto;}
+        .stVerticalBlock h1 {font-size: 35px;}</style>""", unsafe_allow_html=True)
+            
             email_s = st.text_input("Email", key="su_email")
             pw_s = st.text_input("Password (min 8 chars)", type="password", key="su_pw")
             pw2_s = st.text_input("Confirm password", type="password", key="su_pw2")
@@ -137,7 +141,7 @@ def _sidebar_status(user: dict):
         )
         # Link to Profile page (works with multipage apps)
         try:
-            st.page_link("pages/5_Profile.py", label="👤 Edit Profile")
+            st.page_link("pages/0_Profile.py", label="👤 Edit Profile")
         except Exception:
             st.write("👤 Open Profile page from the sidebar")
 

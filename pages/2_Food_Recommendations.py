@@ -267,7 +267,7 @@ for i, (tab, meal) in enumerate(zip(tabs, meal_order)):
                                         display: block;
                                         width: fit-content;
                                         float: right;
-                                        font-size: 12px;
+                                        font-size: 11px;
                                         margin-top: -5px;
                                         margin-bottom: 15px;
                                     }
