@@ -164,17 +164,42 @@ def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
             """, unsafe_allow_html=True)
 
     # NEW MIDDLE CARD: Activity today
+    # determine goal-specific text
+    goal = st.session_state.get("goal", "").lower()
+    activity_target = 0
+    activity_line = f"-{int(activity_kcal)} kcal"
+
+    # if fat-loss goal includes exercise, show goal comparison
+    if "fat loss" in goal and "exercise" in goal:
+        # assume target expenditure ≈ 15 % of total_kcal (tune if you store explicit value)
+        activity_target = int(total_kcal * 0.15)
+        activity_line = f"{int(activity_kcal)} / {activity_target} kcal"
+
+        # visual pill status
+        if activity_kcal >= 0.9 * activity_target:
+            pill_cls, pill_txt = "good", "on track"
+        elif activity_kcal >= 0.5 * activity_target:
+            pill_cls, pill_txt = "warn", "below"
+        else:
+            pill_cls, pill_txt = "bad", "low"
+
+        pill_html = f"<span class='pill {pill_cls}' style='margin-left:6px'>{pill_txt}</span>"
+    else:
+        pill_html = ""
+
+        # --- MIDDLE CARD: Activity today ---
     with c2:
         st.markdown(f"""
         <div class="metriccard">
           <div class="metricrow"><div class="metricicon">🏃</div>
             <div>
-              <div class="metricmain">Activity today</div>
-              <div class="metricsub">-{int(activity_kcal)} kcal</div>
+              <div class="metricmain">Activity today {pill_html}</div>
+              <div class="metricsub">{activity_line}</div>
             </div>
           </div>
         </div>
         """, unsafe_allow_html=True)
+
 
     # RIGHT CARD: Score Today (unchanged)
     with c3:
@@ -419,7 +444,7 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
             f"""
             <div style='background:#f9f9f9;border:1px solid #eee;
                         border-radius:8px;padding:8px 12px;margin-top:5px;
-                        font-size:13px;'>
+                        font-size:13px; margin-bottom: 5px;'>
                 <b>Nutrional values ({serving_g} g):</b><br>
                 {kcal_scaled} kcal • Protein {protein_scaled} g • Carbs {carbs_scaled} g • Fat {fat_scaled} g
             </div>

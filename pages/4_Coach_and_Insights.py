@@ -202,5 +202,5 @@ if st.session_state.get("__coach_out__"):
     rendered_html = markdown.markdown(raw_md, extensions=["fenced_code", "tables"])
     st.markdown(f"<div class='coach-output'>{rendered_html}</div>", unsafe_allow_html=True)
 
-with st.expander("Debug: AI Context (optional)"):
-    st.code(json.dumps(st.session_state.get("__coach_ctx__", {}), indent=2, ensure_ascii=False), language="json")
+# with st.expander("Debug: AI Context (optional)"):
+#     st.code(json.dumps(st.session_state.get("__coach_ctx__", {}), indent=2, ensure_ascii=False), language="json")

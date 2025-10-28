@@ -477,7 +477,9 @@ else:
 
         .stTooltipHoverTarget button * {
             color: #000 !important;
-        } 
+            max-width: 90%;
+            margin: auto;
+        }
 
         .stTooltipHoverTarget em {
         width: 28px;

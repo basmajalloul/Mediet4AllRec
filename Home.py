@@ -30,7 +30,11 @@ ul[data-testid="stSidebarNavItems"] li:nth-child(4) {
 ul[data-testid="stSidebarNavItems"] li:nth-child(5) {
     display: none !important;
 } 
-   
+
+button[data-testid="stBaseButton-secondary"] {
+    margin-top: 10px;
+    margin-bottom: 15px !important;
+}   
 @media (max-width: 768px) {
     ul[data-testid="stSidebarNavItems"] li:nth-child(5) {
         display: block !important;
