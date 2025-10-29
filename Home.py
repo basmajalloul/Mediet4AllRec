@@ -7,6 +7,7 @@ from utils.db import load_profile, load_day_log
 from datetime import date
 import pandas as pd
 from meddiet_rules import derive_daily_calorie_target, split_meal_targets
+from utils.db import load_day_log
 
 ensure_session_keys()
 inject_css_and_title()
@@ -245,7 +246,7 @@ st.session_state["score_today"] = len(st.session_state["logged"])
 
 # st.markdown("""<div id="app-container"/>""", unsafe_allow_html=True)
 
-energy_banner(daily, per_meal, df=st.session_state["df"])
+energy_banner(daily, per_meal, df=df)
 
 # expose coach language to the rest of the app
 st.session_state["ai_language"] = prof.get("ai_language", "English")
@@ -454,10 +455,10 @@ def sodium_class(mg:int):
     return "bad"
 
 def meal_tile(meal, name, kcal, protein, fiber, sodium_mg, tgt):
+    EMOJI = {"Breakfast": "🍇", "Lunch": "🥗", "Dinner": "🍲", "Snack": "🍎"}
     emo = EMOJI.get(meal, "🍽️")
     delta = kcal_delta_chip(kcal, tgt)
     sod_cls = sodium_class(sodium_mg)
-    # header row: title on left, kcal chip on right
     return (
         f'<div class="tile">'
         f'  <div class="icon">{emo}</div>'
@@ -476,6 +477,21 @@ def meal_tile(meal, name, kcal, protein, fiber, sodium_mg, tgt):
         f'</div>'
     )
 
+
+# --- MAIN RENDER ---
+user_id = st.session_state.get("__user_id__") or st.session_state.get("user_id")
+today = date.today()
+
+try:
+    # 🔹 Always load from DB to include serving multipliers
+    rows = load_day_log(user_id, today) if user_id else []
+    ldf = pd.DataFrame(rows) if rows else pd.DataFrame()
+except Exception as e:
+    st.warning(f"Could not load meal logs: {e}")
+    ldf = pd.DataFrame()
+
+order_map = {"Breakfast": 1, "Lunch": 2, "Dinner": 3, "Snack": 4}
+
 if ldf.empty:
     tiles_html = (
         '<div class="meals-tiles"><div class="qa-title">Meals logged today</div>'
@@ -485,21 +501,23 @@ if ldf.empty:
         '</div>'
     )
 else:
-    ldf_view = ldf.copy()
-    ldf_view["__order"] = ldf_view["meal_type"].map(order_map).fillna(99)
-    ldf_view = ldf_view.sort_values(["__order","name"])
+    ldf["__order"] = ldf["meal_type"].map(order_map).fillna(99)
+    ldf = ldf.sort_values(["__order", "name"])
 
     tiles = []
-    for _, r in ldf_view.iterrows():
-        meal = r.get("meal_type","Meal")
-        name = r.get("name","(unnamed)")
-        kcal = int(r.get("calories_kcal", 0))
-        prot = int(r.get("protein_g", 0))
-        fiber = int(r.get("fiber_g", 0))
-        sod   = int(r.get("sodium_mg", 0))
-        tgt   = int(per_meal.get(meal, 0) or 0)
+    for _, r in ldf.iterrows():
+        meal = r.get("meal_type", "Meal")
+        name = r.get("name", "(unnamed)")
+        kcal = int(round(float(r.get("calories_kcal", 0))))
+        prot = int(round(float(r.get("protein_g", 0))))
+        fiber = int(round(float(r.get("fiber_g", 0))))
+        sod = int(round(float(r.get("sodium_mg", 0))))
+        tgt = int(per_meal.get(meal, 0) or 0)
         tiles.append(meal_tile(meal, name, kcal, prot, fiber, sod, tgt))
 
-    tiles_html = '<div class="meals-tiles"><div class="qa-title">Meals logged today</div><div class="grid">' + "".join(tiles) + "</div></div>"
+    tiles_html = (
+        '<div class="meals-tiles"><div class="qa-title">Meals logged today</div>'
+        '<div class="grid">' + "".join(tiles) + "</div></div>"
+    )
 
 st.markdown(tiles_html, unsafe_allow_html=True)

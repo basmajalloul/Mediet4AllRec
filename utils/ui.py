@@ -6,9 +6,10 @@ from typing import Dict, List
 from utils.state import ORDERED_MEALS
 from utils.db import append_logged_meal
 from datetime import date
-from utils.db import append_logged_meal, sum_activity_kcal_for_day
+from utils.db import append_logged_meal, sum_activity_kcal_for_day, load_day_log
 import pathlib
-
+from utils.db import get_current_profile
+import pandas as pd
 
 # ---------------- CSS once ----------------
 def inject_css_and_title():
@@ -70,41 +71,50 @@ def topbar_logo_and_title():
     '<p id="title-caption">Profile-based recommendations • Intake logging • Health-aware prioritization</p></div></div>', unsafe_allow_html=True)
 
 # ---------------- energy banner (now supports live consumption) ----------------
-def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
+def energy_banner(total_kcal: int, per: dict, df=None):
     """
     Global banner with three cards:
       [ Net / Target + per-meal splits ]  [ Activity today ]  [ Score Today ]
-    Signature unchanged so all pages keep working.
+    Always reloads today's logged meals from Supabase meal_log to ensure serving-size consistency.
     """
     ORDERED_MEALS = ["Breakfast", "Lunch", "Dinner", "Snack"]
 
-    # --- food kcal from today's logged meals (if df + st.session_state["logged"] is used)
-    def _consumed_by_meal(_df):
-        by = {m: 0 for m in ORDERED_MEALS}
-        logged = [str(x) for x in st.session_state.get("logged", [])]
-        if _df is None or not logged:
-            return by, 0
-        ids = _df["recipe_id"].astype(str)
-        use = _df[ids.isin(logged)][["meal_type", "calories_kcal"]]
-        for m in ORDERED_MEALS:
-            by[m] = int(use.loc[use["meal_type"] == m, "calories_kcal"].sum())
-        return by, int(sum(by.values()))
-
-    def _status(net:int, target:int):
-        if target <= 0: return "good","on track"
-        r = net / target
-        if r < 0.90:  return "warn","below"
-        if r <= 1.10: return "good","within"
-        return "bad","above"
-
-    by_meal, consumed = _consumed_by_meal(df)
-
-    # --- activity kcals (DB-backed)
+    # --- User identification ---
     user_id = st.session_state.get("__user_id__") or st.session_state.get("user_id")
+    today = date.today()
+
+    # --- Load today's meal logs directly from DB (with serving-scaled values) ---
     try:
-        activity_kcal = int(sum_activity_kcal_for_day(user_id, date.today())) if user_id else 0
+        rows = load_day_log(user_id, today) if user_id else []
+        df = pd.DataFrame(rows) if rows else pd.DataFrame()
+    except Exception as e:
+        st.warning(f"Could not load meal logs: {e}")
+        df = pd.DataFrame()
+
+    # --- Compute calories per meal type ---
+    by_meal = {m: 0 for m in ORDERED_MEALS}
+    consumed = 0
+    if not df.empty:
+        grouped = df.groupby("meal_type")["calories_kcal"].sum().to_dict()
+        for m in ORDERED_MEALS:
+            by_meal[m] = int(grouped.get(m, 0))
+        consumed = int(sum(by_meal.values()))
+
+    # --- Activity kcals (from activity_log) ---
+    try:
+        activity_kcal = int(sum_activity_kcal_for_day(user_id, today)) if user_id else 0
     except Exception:
         activity_kcal = 0
+
+    # --- Fetch targets & goals from DB ---
+    profile_data = get_current_profile(user_id) if user_id else {}
+    goal = str(profile_data.get("goal", "")).lower()
+    target_intake = int(profile_data.get("tdee", profile_data.get("target_intake", total_kcal) or total_kcal))
+    target_expenditure = int(profile_data.get("target_expenditure", 0) or 0)
+
+    # --- Derived metrics ---
+    net = consumed - activity_kcal
+    live = consumed > 0
 
     def _fmt_kcal(v: int) -> str:
         v = int(v)
@@ -112,7 +122,7 @@ def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
 
     def _status(net: int, target: int):
         if net < 0:
-            return "warn", "deficit"           # activity > food
+            return "warn", "deficit"
         if target <= 0:
             return "good", "on track"
         r = net / target
@@ -120,16 +130,13 @@ def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
         if r <= 1.10: return "good", "within"
         return "bad", "above"
 
-    net = int(consumed) - int(activity_kcal)
-    live = (df is not None) and (consumed > 0)
-
-    # ---------- layout: 3 columns (main, activity, score)
+    # ---------- layout ----------
     c1, c2, c3 = st.columns([2, 1, 1])
 
-    # MAIN: Net/Target (or Target-only when no logs yet)
+    # === LEFT CARD: Net / Target ===
     with c1:
         if live:
-            pill_cls, pill_txt = _status(net, int(total_kcal))
+            pill_cls, pill_txt = _status(net, target_intake)
             per_meal_line = " • ".join([
                 f"Breakfast {by_meal.get('Breakfast',0)}/{int(per.get('Breakfast',0) or 0)}",
                 f"Lunch {by_meal.get('Lunch',0)}/{int(per.get('Lunch',0) or 0)}",
@@ -140,9 +147,9 @@ def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
             <div class="metriccard">
               <div class="metricrow"><div class="metricicon">🔥</div>
                 <div>
-                    <div class="metricmain">Net today: {_fmt_kcal(net)} / {int(total_kcal)} kcal
-                        <span class="pill {pill_cls}" style="margin-left:8px">{pill_txt}</span>
-                    </div>
+                  <div class="metricmain">Net today: {_fmt_kcal(net)} / {target_intake} kcal
+                    <span class="pill {pill_cls}" style="margin-left:8px">{pill_txt}</span>
+                  </div>
                   <div class="metricsub">{per_meal_line}</div>
                 </div>
               </div>
@@ -153,7 +160,7 @@ def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
             <div class="metriccard">
               <div class="metricrow"><div class="metricicon">🔥</div>
                 <div>
-                  <div class="metricmain">Daily energy target: {int(total_kcal)} kcal</div>
+                  <div class="metricmain">Daily energy target: {target_intake} kcal</div>
                   <div class="metricsub">
                     Breakfast {per.get('Breakfast',0)} • Lunch {per.get('Lunch',0)}
                     • Dinner {per.get('Dinner',0)} • Snack {per.get('Snack',0)} kcal
@@ -163,32 +170,23 @@ def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
             </div>
             """, unsafe_allow_html=True)
 
-    # NEW MIDDLE CARD: Activity today
-    # determine goal-specific text
-    goal = st.session_state.get("goal", "").lower()
-    activity_target = 0
-    activity_line = f"-{int(activity_kcal)} kcal"
-
-    # if fat-loss goal includes exercise, show goal comparison
-    if "fat loss" in goal and "exercise" in goal:
-        # assume target expenditure ≈ 15 % of total_kcal (tune if you store explicit value)
-        activity_target = int(total_kcal * 0.15)
-        activity_line = f"{int(activity_kcal)} / {activity_target} kcal"
-
-        # visual pill status
-        if activity_kcal >= 0.9 * activity_target:
-            pill_cls, pill_txt = "good", "on track"
-        elif activity_kcal >= 0.5 * activity_target:
-            pill_cls, pill_txt = "warn", "below"
-        else:
-            pill_cls, pill_txt = "bad", "low"
-
-        pill_html = f"<span class='pill {pill_cls}' style='margin-left:6px'>{pill_txt}</span>"
-    else:
+    # === MIDDLE CARD: Activity ===
+    with c2:
+        activity_line = f"{activity_kcal} kcal"
         pill_html = ""
 
-        # --- MIDDLE CARD: Activity today ---
-    with c2:
+        if "fat loss" in goal and "exercise" in goal:
+            activity_target = target_expenditure or int(target_intake * 0.15)
+            activity_line = f"{activity_kcal} / {activity_target} kcal"
+
+            if activity_kcal >= 0.9 * activity_target:
+                pill_cls, pill_txt = "good", "on track"
+            elif activity_kcal >= 0.5 * activity_target:
+                pill_cls, pill_txt = "warn", "below"
+            else:
+                pill_cls, pill_txt = "bad", "low"
+            pill_html = f"<span class='pill {pill_cls}' style='margin-left:6px'>{pill_txt}</span>"
+
         st.markdown(f"""
         <div class="metriccard">
           <div class="metricrow"><div class="metricicon">🏃</div>
@@ -200,8 +198,7 @@ def energy_banner(total_kcal: int, per: Dict[str, int], df=None):
         </div>
         """, unsafe_allow_html=True)
 
-
-    # RIGHT CARD: Score Today (unchanged)
+    # === RIGHT CARD: Score Today ===
     with c3:
         st.markdown(f"""
         <div class="metriccard">
@@ -378,7 +375,7 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
         med_badge = ""
         score = float(r.get("fit_med_compliance", 0))
         if score > 0.8:
-            med_badge = "<span class='badge green'>🌿 100% Med</span>"
+            med_badge = "<span class='badge green'>🌿 Med-compliant</span>"
         elif score > 0.4:
             med_badge = "<span class='badge yellow'>⚖️ Partially Med</span>"
         else:
@@ -423,18 +420,12 @@ def render_recipe_card(r, *, kcal_target, diet_prefs, health, log_key_prefix="re
         st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
         default_serving = 100  # dataset values per 100g by default
         key_serv = f"{log_key_prefix}_serv_{r['recipe_id']}"
-        serving_str = st.text_input(
+        serving_g = st.number_input(
             "Serving size (g)",
-            value=str(default_serving),
-            key=key_serv,
-            help="Enter the meal weight in grams."
+            min_value=50, max_value=1000,
+            value=default_serving, step=25,
+            key=key_serv
         )
-
-        try:
-            serving_g = max(50, min(1000, int(serving_str)))
-        except ValueError:
-            serving_g = default_serving
-
 
         # Scale nutrients and calories
         scale = serving_g / default_serving
@@ -624,7 +615,7 @@ def render_recipe_card_compact(r, *, kcal_target, diet_prefs, health, log_key_pr
         med_badge = ""
         score = float(r.get("fit_med_compliance", 0))
         if score > 0.8:
-            med_badge = "<span class='badge green'>🌿 100% Med</span>"
+            med_badge = "<span class='badge green'>🌿 Med-compliant</span>"
         elif score > 0.4:
             med_badge = "<span class='badge yellow'>⚖️ Partially Med</span>"
         else:
@@ -651,17 +642,12 @@ def render_recipe_card_compact(r, *, kcal_target, diet_prefs, health, log_key_pr
         # --- Serving size adjustment ---
         default_serving = 100  # base reference (your dataset values are per 100g)
         key_serv = f"{log_key_prefix}_serv_{r['recipe_id']}"
-        serving_str = st.text_input(
+        serving_g = st.number_input(
             "Serving size (g)",
-            value=str(default_serving),
-            key=key_serv,
-            help="Enter the meal weight in grams."
+            min_value=50, max_value=1000,
+            value=default_serving, step=25,
+            key=key_serv
         )
-
-        try:
-            serving_g = max(50, min(1000, int(serving_str)))
-        except ValueError:
-            serving_g = default_serving
 
         # Scale calories and macros according to serving size
         scale = serving_g / default_serving

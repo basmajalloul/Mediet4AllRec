@@ -18,7 +18,7 @@ st.session_state["__user_id__"] = user["id"]
 user_name = user.get("user_metadata", {}).get("name") or user.get("email", "User")
 st.markdown(f"<h3 class='welcome-back profile-welcome'>👋 Welcome back, <b>{user_name.split('@')[0].title()}</b>!</h3>", unsafe_allow_html=True)
 
-ensure_session_keys()
+ensure_session_keys() 
 topbar_logo_and_title()
 
 st.markdown("## My Profile")
@@ -255,31 +255,91 @@ with st.form("profile_form", clear_on_submit=False):
 
 if save_clicked or create_clicked:
     target_name = (new_name.strip() if create_clicked and new_name.strip() else sel_name)
+
+    # --- compute core metabolic values ---
+    # BMR via Mifflin-St Jeor
+    if sex == "Male":
+        bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
+    else:
+        bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
+
+    # Activity multiplier
+    activity_factors = {
+        "Sedentary": 1.2,
+        "Light": 1.375,
+        "Moderate": 1.55,
+        "Active": 1.725,
+        "Very Active": 1.9,
+    }
+    tdee = bmr * activity_factors.get(activity, 1.2)
+
+    # --- adjust for goal ---
+    goal_lower = goal.lower()
+    target_intake = tdee
+    target_expenditure = 0
+
+    if "fat loss" in goal_lower:
+        target_intake = tdee * 0.8        # 20% calorie deficit
+        if "exercise" in goal_lower:
+            target_expenditure = tdee * 0.15  # add ~15% as activity target
+    elif "weight gain" in goal_lower:
+        target_intake = tdee * 1.1        # 10% surplus
+
+    target_intake = int(round(target_intake))
+    target_expenditure = int(round(target_expenditure))
+    bmr = int(round(bmr))
+    tdee = int(round(tdee))
+
+    # --- full payload ---
     payload = {
-        "age": int(age), "height_cm": int(height_cm), "sex": sex, "weight_kg": float(weight_kg),
-        "activity": activity, "goal": goal, "pattern": pattern, "ai_language": ai_lang,
+        "age": int(age),
+        "height_cm": int(height_cm),
+        "sex": sex,
+        "weight_kg": float(weight_kg),
+        "activity": activity,
+        "goal": goal,
+        "pattern": pattern,
+        "ai_language": ai_lang,
+        "bmr": bmr,
+        "tdee": tdee,
+        "target_intake": target_intake,
+        "target_expenditure": target_expenditure,
         "conditions": {
-            "hypertension": hypertension, "diabetes": diabetes, "prediabetes": prediabetes,
-            "hyperlipidemia": hyperlipidemia, "celiac": celiac, "gerd": gerd, "autoimmune": autoimmune
+            "hypertension": hypertension,
+            "diabetes": diabetes,
+            "prediabetes": prediabetes,
+            "hyperlipidemia": hyperlipidemia,
+            "celiac": celiac,
+            "gerd": gerd,
+            "autoimmune": autoimmune,
         },
         "diet_style": {
-            "vegan": vegan, "vegetarian": vegetarian, "pescatarian": pescatarian,
-            "gluten_free": gluten_free, "dairy_free": dairy_free
+            "vegan": vegan,
+            "vegetarian": vegetarian,
+            "pescatarian": pescatarian,
+            "gluten_free": gluten_free,
+            "dairy_free": dairy_free,
         },
         "prefer": [s.strip() for s in prefer_str.split(",") if s.strip()],
         "avoid":  [s.strip() for s in avoid_str.split(",") if s.strip()],
     }
+
+    # --- save to Supabase ---
     try:
         upsert_profile(user_id, target_name, payload)
         st.success(f"Profile saved: **{target_name}**")
-        # Reset hydration so if they switched name we reload fresh
+
+        # Clear caches to force reload on next page
         try:
             list_profiles.clear()  # type: ignore
             load_profile.clear()   # type: ignore
         except Exception:
             pass
+
         st.session_state.pop(f"__hydrated_profile__:{sel_name}", None)
         st.session_state["active_profile_name"] = target_name
         st.rerun()
+
     except Exception as e:
         st.error(f"Could not save profile: {e}")
+

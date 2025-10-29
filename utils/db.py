@@ -66,6 +66,20 @@ def load_profile(user_id: str, name: str) -> Dict[str, Any]:
     rows = r.data or []
     return rows[0]["data"] if rows else {}
 
+def get_current_profile(user_id: str) -> dict:
+    """Return the merged user profile data (single row) for easy global use."""
+    r = (
+        get_client()
+        .table("profiles")
+        .select("data")
+        .eq("user_id", user_id)
+        .eq("name", "default")   # or active profile name if you store one
+        .limit(1)
+        .execute()
+    )
+    rows = r.data or []
+    return rows[0]["data"] if rows else {}
+
 def upsert_profile(user_id: str, name: str, data: Dict[str, Any]) -> Dict[str, Any]:
     r = (
         get_client()

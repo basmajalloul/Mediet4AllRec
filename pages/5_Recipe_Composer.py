@@ -135,21 +135,78 @@ with c1:
 with c2:
     regen = st.button("🔄 Regenerate", use_container_width=True)
 
-if btn or regen:
-    # ---- 1) First draft ----
-    sys_prompt = build_system_prompt()
-    user_prompt = build_user_prompt(meal, kcal_target, diet_prefs, health, [p.strip() for p in pantry if p.strip()], servings, strict_pantry)
-    raw = call_llm([
-        {"role":"system","content": sys_prompt},
-        {"role":"user","content": user_prompt}
-    ])
-    try:
-        recipe = _json_from_text(raw)
-    except Exception as e:
-        st.error(f"Failed to parse recipe JSON: {e}")
-        st.code(raw)
-        st.stop()
+# --- Initialize loading state ---
+if "compose_loading" not in st.session_state:
+    st.session_state["compose_loading"] = False
 
+# --- Handle click events ---
+if (btn or regen) and not st.session_state["compose_loading"]:
+    st.session_state["compose_loading"] = True
+    st.session_state["__compose_action__"] = "regen" if regen else "compose"
+    st.session_state["last_recipe"] = None
+    st.rerun()
+
+# --- If loading: show message & generate recipe ---
+if st.session_state["compose_loading"]:
+    st.markdown(
+        """
+        <div style="
+            background-color:#fff7e6;
+            border:1px solid #f9ad1a;
+            color:#b46b00;
+            border-radius:10px;
+            padding:14px 16px;
+            font-weight:400;
+            display:flex;
+            align-items:center;
+            gap:8px;
+            margin-top:10px;
+        ">
+            🍳 MedChef is preparing your recipe… please wait ⏳
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.stop()
+
+
+    try:
+        sys_prompt = build_system_prompt()
+        user_prompt = build_user_prompt(
+            meal, kcal_target, diet_prefs, health,
+            [p.strip() for p in pantry if p.strip()],
+            servings, strict_pantry
+        )
+        raw = call_llm([
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": user_prompt}
+        ])
+
+        recipe = _json_from_text(raw)
+        score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)
+        critique = critique_message(score, dbg, recipe)
+
+        if critique and "Looks good" not in critique:
+            raw2 = call_llm([
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": refine_prompt(recipe, critique)}
+            ], temperature=0.5, max_tokens=1000)
+            recipe = _json_from_text(raw2)
+            score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)
+
+        st.session_state["last_recipe"] = recipe
+        st.session_state["compose_loading"] = False
+        st.rerun()
+
+    except Exception as e:
+        st.session_state["compose_loading"] = False
+        st.error(f"❌ Recipe generation failed: {e}")
+
+# --- Render final recipe after loading ---
+if not st.session_state.get("compose_loading") and st.session_state.get("last_recipe"):
+    recipe = st.session_state["last_recipe"]
+    st.success("✅ Recipe ready!")
+    
     # ---- 2) Critique with rules ----
     # after first draft
     score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)

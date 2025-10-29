@@ -113,8 +113,8 @@ card(c3, "MedDiet Adherence", "❤️", adh["total"])
 
 
 st.markdown("---")
-st.markdown("## AI Coach")
-st.caption("👉 Click **Run AI Coach**. After you change meals or settings, click **Update with changes**.")
+st.markdown("## MedCoach")
+st.caption("👉 Click **Run MedCoach**. After you change meals or settings, click **Update with changes**.")
 
 AI_SYSTEM_PROMPT = """You are MedCoach, an evidence-informed Mediterranean diet assistant.
 Goals: Explain today's adherence, check health conditions, and suggest up to 3 specific, kcal-respecting improvements.
@@ -176,31 +176,49 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
     )
     return chat.choices[0].message.content
 
-colA,colB = st.columns([1,1])
-run_clicked = update_clicked = False
-with colA:
-    run_clicked = st.button("🧠 Run AI Coach", type="primary", use_container_width=True)
-with colB:
-    update_clicked = st.button("🔄 Update with changes", use_container_width=True)
+run_clicked = st.button("🧠 Run MedCoach", use_container_width=True, key="run_ai")
+update_clicked = st.button("🔄 Update with changes", use_container_width=True, key="update_ai")
 
-if run_clicked or update_clicked:
-    user_id = st.session_state.get("__user_id__") or st.session_state.get("user_id")
-    ctx = build_ai_context(
-        snap["df"], snap["logged"],
-        profile,
-        {"daily_kcal": daily, "per_meal_kcal": per_meal},
-        snap["adh"],
-        user_id
-    )
-    out = call_llm(AI_SYSTEM_PROMPT, coach_prompt(ctx, st.session_state.get("ai_language","English")))
-    st.session_state["__coach_out__"] = out
-    st.session_state["__coach_ctx__"] = ctx
+# initialize state
+if "ai_loading" not in st.session_state:
+    st.session_state["ai_loading"] = False
+
+# if user triggers the run/update
+if (run_clicked or update_clicked) and not st.session_state["ai_loading"]:
+    st.session_state["ai_loading"] = True
+    st.session_state["__coach_out__"] = None  # clear previous
     st.rerun()
 
-if st.session_state.get("__coach_out__"):
-    raw_md = st.session_state["__coach_out__"]
-    rendered_html = markdown.markdown(raw_md, extensions=["fenced_code", "tables"])
-    st.markdown(f"<div class='coach-output'>{rendered_html}</div>", unsafe_allow_html=True)
+# loading state (runs on next script pass)
+if st.session_state["ai_loading"]:
+    st.info("🤔 MedCoach is analyzing your meals and activity... Please wait ⏳")
+
+    try:
+        user_id = st.session_state.get("__user_id__") or st.session_state.get("user_id")
+        ctx = build_ai_context(
+            snap["df"], snap["logged"],
+            profile,
+            {"daily_kcal": daily, "per_meal_kcal": per_meal},
+            snap["adh"], user_id
+        )
+        out = call_llm(
+            AI_SYSTEM_PROMPT,
+            coach_prompt(ctx, st.session_state.get("ai_language", "English"))
+        )
+        st.session_state["__coach_out__"] = out
+        st.session_state["__coach_ctx__"] = ctx
+        st.session_state["ai_loading"] = False
+        st.rerun()
+
+    except Exception as e:
+        st.session_state["ai_loading"] = False
+        st.error(f"❌ Something went wrong while generating feedback: {e}")
+
+# when finished, display feedback
+if not st.session_state.get("ai_loading") and st.session_state.get("__coach_out__"):
+    st.success("✅ MedCoach feedback ready!")
+    st.markdown(st.session_state["__coach_out__"], unsafe_allow_html=True)
+
 
 # with st.expander("Debug: AI Context (optional)"):
 #     st.code(json.dumps(st.session_state.get("__coach_ctx__", {}), indent=2, ensure_ascii=False), language="json")

@@ -124,24 +124,57 @@ def summarize_logged_stats(df_all: pd.DataFrame, logged_ids: List[str]) -> dict:
 def build_ai_context(df_all: pd.DataFrame, logged_ids: List[str],
                      profile: Dict, targets: Dict, adherence: Dict, user_id: str) -> dict:
     from datetime import date
-    from utils.db import activities_for_day
+    from utils.db import activities_for_day, load_day_log
+    import pandas as pd
+    import streamlit as st
 
-    # --- meals summary ---
+    # --- load serving-scaled meals from DB ---
+    try:
+        db_rows = load_day_log(user_id, date.today()) if user_id else []
+        df_logged = pd.DataFrame(db_rows)
+    except Exception as e:
+        st.warning(f"⚠️ Could not load logged meals from DB: {e}")
+        df_logged = pd.DataFrame()
+
+    # fallback to df_all if no DB records (for safety)
+    if df_logged.empty and logged_ids:
+        df_logged = df_all[df_all["recipe_id"].isin(logged_ids)].copy()
+
+    # --- build meal summaries ---
     meals = []
-    for rid in logged_ids:
-        row = df_all[df_all["recipe_id"] == rid].iloc[0].to_dict()
+    for _, row in df_logged.iterrows():
         meals.append({
-            "recipe_id": row["recipe_id"],
-            "name": row["name"],
-            "meal_type": row["meal_type"],
-            "kcal": float(row["calories_kcal"]),
-            "protein_g": float(row["protein_g"]),
-            "carbs_g": float(row["carbs_g"]),
-            "fat_g": float(row["fat_g"]),
-            "fiber_g": float(row["fiber_g"]),
-            "sodium_mg": float(row["sodium_mg"]),
+            "recipe_id": row.get("recipe_id"),
+            "name": row.get("name"),
+            "meal_type": row.get("meal_type"),
+            "kcal": float(row.get("calories_kcal", 0)),
+            "protein_g": float(row.get("protein_g", 0)),
+            "carbs_g": float(row.get("carbs_g", 0)),
+            "fat_g": float(row.get("fat_g", 0)),
+            "fiber_g": float(row.get("fiber_g", 0)),
+            "sodium_mg": float(row.get("sodium_mg", 0)),
             "tags": str(row.get("med_attributes", "")),
+            "serving_g": float(row.get("serving_g", 100)),
         })
+
+    # --- summarize total intake ---
+    total_intake = sum(m["kcal"] for m in meals)
+    total_protein = sum(m["protein_g"] for m in meals)
+    total_carbs = sum(m["carbs_g"] for m in meals)
+    total_fat = sum(m["fat_g"] for m in meals)
+    total_fiber = sum(m["fiber_g"] for m in meals)
+    total_sodium = sum(m["sodium_mg"] for m in meals)
+
+    day_stats = {
+        "totals": {
+            "calories_kcal": total_intake,
+            "protein_g": total_protein,
+            "carbs_g": total_carbs,
+            "fat_g": total_fat,
+            "fiber_g": total_fiber,
+            "sodium_mg": total_sodium,
+        }
+    }
 
     # --- activity summary ---
     acts = activities_for_day(user_id, date.today())
@@ -162,10 +195,9 @@ def build_ai_context(df_all: pd.DataFrame, logged_ids: List[str],
     }
 
     # --- energy balance ---
-    day_stats = summarize_logged_stats(df_all, logged_ids)
-    total_intake = day_stats["totals"].get("calories_kcal", 0)
     net_energy = total_intake - total_activity_kcal
 
+    # --- final context dict (same schema as before) ---
     return {
         "profile": profile,
         "targets": targets,
