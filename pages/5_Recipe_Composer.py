@@ -147,6 +147,7 @@ if (btn or regen) and not st.session_state["compose_loading"]:
     st.rerun()
 
 # --- If loading: show message & generate recipe ---
+# --- If loading: show message & generate recipe ---
 if st.session_state["compose_loading"]:
     st.markdown(
         """
@@ -167,16 +168,17 @@ if st.session_state["compose_loading"]:
         """,
         unsafe_allow_html=True
     )
-    st.stop()
-
 
     try:
         sys_prompt = build_system_prompt()
+        st.session_state["sys_prompt"] = sys_prompt
+
         user_prompt = build_user_prompt(
             meal, kcal_target, diet_prefs, health,
             [p.strip() for p in pantry if p.strip()],
             servings, strict_pantry
         )
+
         raw = call_llm([
             {"role": "system", "content": sys_prompt},
             {"role": "user", "content": user_prompt}
@@ -187,6 +189,8 @@ if st.session_state["compose_loading"]:
         critique = critique_message(score, dbg, recipe)
 
         if critique and "Looks good" not in critique:
+            sys_prompt = st.session_state.get("sys_prompt", build_system_prompt())
+
             raw2 = call_llm([
                 {"role": "system", "content": sys_prompt},
                 {"role": "user", "content": refine_prompt(recipe, critique)}
@@ -208,15 +212,10 @@ if not st.session_state.get("compose_loading") and st.session_state.get("last_re
     st.success("✅ Recipe ready!")
     
     # ---- 2) Critique with rules ----
-    # after first draft
     score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)
     critique = critique_message(score, dbg, recipe)   # pass recipe
 
-    # after refine attempt
-    recipe = _json_from_text(raw)
-    score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)
-    critique = critique_message(score, dbg, recipe)   # ensure critique updated
-
+    sys_prompt = st.session_state.get("sys_prompt", build_system_prompt())
 
     # ---- 3) If issues, ask the LLM to refine once ----
     if critique and "Looks good" not in critique:
@@ -304,57 +303,57 @@ if not st.session_state.get("compose_loading") and st.session_state.get("last_re
 
     c3, c4, c5 = st.columns(3)
 
-    # (1) Download JSON (no more state reset)
-    json_bytes = io.BytesIO(json.dumps(recipe, ensure_ascii=False, indent=2).encode("utf-8"))
-    with c3:
-        st.download_button(
-            "⬇️ Save JSON",
-            data=json_bytes,
-            file_name=f"{recipe.get('title','recipe')}.json",
-            mime="application/json",
-            use_container_width=True,
-            key="compose_dl_json",
-        )
+    # # (1) Download JSON (no more state reset)
+    # json_bytes = io.BytesIO(json.dumps(recipe, ensure_ascii=False, indent=2).encode("utf-8"))
+    # with c3:
+    #     st.download_button(
+    #         "⬇️ Save JSON",
+    #         data=json_bytes,
+    #         file_name=f"{recipe.get('title','recipe')}.json",
+    #         mime="application/json",
+    #         use_container_width=True,
+    #         key="compose_dl_json",
+    #     )
 
-    # (2) Ask for more protein → refine once with the LLM and re-render
-    with c4:
-        if st.button("📝 Tweak: more protein", use_container_width=True, key="compose_tweak_pro"):
-            try:
-                # nudge prompt: keep the same dish but raise protein by ~15–25% within kcal ±10%
-                tweak_note = critique + "\n\nImprove protein by ~20% while staying within ±10% kcal; keep style & pantry."
-                raw2 = call_llm(
-                    [{"role":"system","content": sys_prompt},
-                     {"role":"user","content": refine_prompt(recipe, tweak_note)}],
-                )
-                recipe = _json_from_text(raw2)
-                # re-score & redraw immediately
-                score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)
-                st.session_state["last_recipe"] = recipe
-                st.success("Tweaked for higher protein.")
-                st.rerun()
-            except Exception as e:
-                st.warning(f"Couldn’t tweak automatically: {e}")
+    # # (2) Ask for more protein → refine once with the LLM and re-render
+    # with c4:
+    #     if st.button("📝 Tweak: more protein", use_container_width=True, key="compose_tweak_pro"):
+    #         try:
+    #             # nudge prompt: keep the same dish but raise protein by ~15–25% within kcal ±10%
+    #             tweak_note = critique + "\n\nImprove protein by ~20% while staying within ±10% kcal; keep style & pantry."
+    #             raw2 = call_llm(
+    #                 [{"role":"system","content": sys_prompt},
+    #                  {"role":"user","content": refine_prompt(recipe, tweak_note)}],
+    #             )
+    #             recipe = _json_from_text(raw2)
+    #             # re-score & redraw immediately
+    #             score, dbg = compute_fit_for_recipe(recipe, kcal_target, diet_prefs, health)
+    #             st.session_state["last_recipe"] = recipe
+    #             st.success("Tweaked for higher protein.")
+    #             st.rerun()
+    #         except Exception as e:
+    #             st.warning(f"Couldn’t tweak automatically: {e}")
 
-    # (3) Log as today’s meal → append into df + add to logged + toast
-    with c5:
-        if st.button("📥 Log as today’s meal", use_container_width=True, key="compose_log"):
-            try:
-                row = _row_from_composed(recipe, meal)
-                # make sure df exists
-                if "df" not in st.session_state:
-                    st.session_state["df"] = pd.DataFrame([row])
-                else:
-                    st.session_state["df"] = pd.concat(
-                        [st.session_state["df"], pd.DataFrame([row])],
-                        ignore_index=True
-                    )
-                # add id to logged so the rest of the app picks it up
-                st.session_state.setdefault("logged", []).append(row["recipe_id"])
-                # bump score like the cards do
-                st.session_state["score_today"] = int(st.session_state.get("score_today", 0)) + 1
-                st.toast(f"Logged ✅  (score {st.session_state['score_today']})")
-                st.success("Recipe added to Logged Today and included in Adherence & AI Coach.")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Couldn’t log meal: {e}")
+    # # (3) Log as today’s meal → append into df + add to logged + toast
+    # with c5:
+    #     if st.button("📥 Log as today’s meal", use_container_width=True, key="compose_log"):
+    #         try:
+    #             row = _row_from_composed(recipe, meal)
+    #             # make sure df exists
+    #             if "df" not in st.session_state:
+    #                 st.session_state["df"] = pd.DataFrame([row])
+    #             else:
+    #                 st.session_state["df"] = pd.concat(
+    #                     [st.session_state["df"], pd.DataFrame([row])],
+    #                     ignore_index=True
+    #                 )
+    #             # add id to logged so the rest of the app picks it up
+    #             st.session_state.setdefault("logged", []).append(row["recipe_id"])
+    #             # bump score like the cards do
+    #             st.session_state["score_today"] = int(st.session_state.get("score_today", 0)) + 1
+    #             st.toast(f"Logged ✅  (score {st.session_state['score_today']})")
+    #             st.success("Recipe added to Logged Today and included in Adherence & AI Coach.")
+    #             st.rerun()
+    #         except Exception as e:
+    #             st.error(f"Couldn’t log meal: {e}")
 
