@@ -23,7 +23,9 @@ topbar_logo_and_title()
 
 st.markdown("## My Profile")
 st.caption("Manage your personal details, goals, and dietary constraints. Changes are saved to your account.")
-
+st.markdown("""<style>div[data-testid="stNumberInput"] {
+    margin: 0 !important;
+}</style>""", unsafe_allow_html=True)
 # ------------------ Profile picker ------------------
 col_sel, col_new = st.columns([2, 1])
 with col_sel:
